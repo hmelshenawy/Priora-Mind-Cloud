@@ -1,8 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { LoginDto } from './dto/login-auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import argon2 from 'argon2';
+import { log } from 'console';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +12,8 @@ export class AuthService {
   ) { }
 
   async register(createAuthDto: CreateAuthDto) {
+    const email = createAuthDto.email.trim().toLowerCase()
+
     const isExist = await this.prisma.user.findUnique({ where: { email: createAuthDto.email } })
     if (isExist) {
       throw new ConflictException("Email already found!!")
@@ -18,26 +21,34 @@ export class AuthService {
 
     const passwordHash = await argon2.hash(createAuthDto.password)
 
-    const user = await this.prisma.user.create({"data":{ email: createAuthDto.email, passwordHash: passwordHash}})
-    return {"email":user.email,
-      "id":user.id,
-      "createdAt":user.createdAt,
+    const user = await this.prisma.user.create({ "data": { email: email, passwordHash: passwordHash } })
+    return {
+      "email": user.email,
+      "id": user.id,
+      "createdAt": user.createdAt,
     };
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  async login(loginDto: LoginDto) {
+    const email = loginDto.email.trim().toLowerCase()
+    const user = await this.prisma.user.findUnique({ where: { email: email } })
+    if (!user) {
+      throw new NotFoundException("User Not Found!!")
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+    const isPasswordValid = await argon2.verify(
+      user.passwordHash,
+      loginDto.password,
+    );
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    if (!isPasswordValid) {
+      throw new NotFoundException("User Not Found!!")
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      result: true,
+    };
   }
 }
