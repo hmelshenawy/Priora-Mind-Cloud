@@ -202,13 +202,46 @@ Auth Module
 Users Module
 MindSpaces Module
 Conversations Module
-Messages Module
 Notes Module
 Tasks Module
 Documents Module
 AI / Agent Client Module
 Knowledge / RAG Client Module
 Storage Module
+```
+
+Messages are part of the `ConversationsModule` in V1 because a Message does not exist independently from a Conversation.
+
+Conceptually:
+
+```text
+ConversationsModule
+├── ConversationsController
+├── ConversationsService
+└── ConversationMessagesService
+```
+
+The same controller can expose both conversation and nested message routes:
+
+```text
+POST /conversations
+GET  /conversations
+GET  /conversations/:conversationId
+
+POST /conversations/:conversationId/messages
+GET  /conversations/:conversationId/messages
+```
+
+`ConversationMessagesService` can remain separate internally because sending a message has its own workflow:
+
+```text
+validate conversation
+→ validate ownership
+→ persist user message
+→ load conversation history
+→ call Agent Service
+→ persist assistant message
+→ return response
 ```
 
 Each normal domain module follows:
