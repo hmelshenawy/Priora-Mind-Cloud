@@ -4,9 +4,14 @@ import { JwtGuard } from 'src/auth/guards/jwt-guard';
 
 
 @Controller('users')
+@UseGuards(JwtGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get()
+  get(){
+    return "hopa"
+  }
  
 
 
