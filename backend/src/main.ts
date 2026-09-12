@@ -10,13 +10,14 @@ async function bootstrap() {
   const PORT = config.get("PORT") ?? 3000
 
   app.useGlobalPipes(new ValidationPipe({
-  whitelist: true,
-  forbidNonWhitelisted: true,
-  transform: true,
-}))
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }))
 
   app.setGlobalPrefix('api/v1');
-  await app.listen(PORT );
+  app.useGlobalPipes(new ValidationPipe());
+  await app.listen(PORT);
 
   Logger.log(`Priora Mind backend listening on :${PORT}`, 'Bootstrap');
 
