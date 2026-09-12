@@ -1,20 +1,22 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import argon2 from 'argon2';
-import { log } from 'console';
+
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService
   ) { }
 
   async register(createAuthDto: CreateAuthDto) {
     const email = createAuthDto.email.trim().toLowerCase()
 
-    const isExist = await this.prisma.user.findUnique({ where: { email: createAuthDto.email } })
+    const isExist = await this.prisma.user.findUnique({ where: { email: email } })
     if (isExist) {
       throw new ConflictException("Email already found!!")
     }
@@ -33,7 +35,7 @@ export class AuthService {
     const email = loginDto.email.trim().toLowerCase()
     const user = await this.prisma.user.findUnique({ where: { email: email } })
     if (!user) {
-      throw new NotFoundException("User Not Found!!")
+      throw new UnauthorizedException('Invalid email or password!!');
     }
 
 
@@ -43,12 +45,20 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new NotFoundException("User Not Found!!")
+      throw new UnauthorizedException('Invalid email or password!!');
     }
+
+    const payload = {
+      "sub": user.id,
+      "email": user.email
+    }
+    const accessToken = await this.jwtService.signAsync(payload)
     return {
-      id: user.id,
-      email: user.email,
-      result: true,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+      accessToken,
     };
   }
 }
