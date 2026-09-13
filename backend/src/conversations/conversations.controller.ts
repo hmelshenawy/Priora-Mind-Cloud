@@ -1,5 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
+import { ConversationMessagesService } from './conversation-messages.service';
+import { CreateMessageDto } from './dto/create-message.dto';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { JwtGuard } from 'src/auth/guards/jwt-guard';
@@ -8,7 +10,27 @@ import { JwtGuard } from 'src/auth/guards/jwt-guard';
 @Controller('conversations')
 @UseGuards(JwtGuard)
 export class ConversationsController {
-  constructor(private readonly conversationsService: ConversationsService) {}
+  constructor(
+    private readonly conversationsService: ConversationsService,
+    private readonly conversationMessagesService: ConversationMessagesService,
+  ) {}
+
+  @Post(':id/messages')
+  createMessage(
+    @Param('id') conversationId: string,
+    @Body() dto: CreateMessageDto,
+    @Req() req: { user: { userId: string } },
+  ) {
+    return this.conversationMessagesService.create(conversationId, dto, req.user.userId);
+  }
+
+  @Get(':id/messages')
+  findMessages(
+    @Param('id') conversationId: string,
+    @Req() req: { user: { userId: string } },
+  ) {
+    return this.conversationMessagesService.findAll(conversationId, req.user.userId);
+  }
 
   @Post()
   create( @Body() createConversationDto: CreateConversationDto, @Req() req: any) {
