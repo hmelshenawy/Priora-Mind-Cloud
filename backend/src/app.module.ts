@@ -7,9 +7,10 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MindspacesModule } from './mindspaces/mindspaces.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { NotesModule } from './notes/notes.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule],
+  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule],
   controllers: [AppController],
   providers: [AppService],
 })
