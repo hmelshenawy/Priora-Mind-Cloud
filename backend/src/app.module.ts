@@ -9,9 +9,10 @@ import { MindspacesModule } from './mindspaces/mindspaces.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { NotesModule } from './notes/notes.module';
 import { TasksModule } from './tasks/tasks.module';
+import { DocumentsModule } from './documents/documents.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule],
+  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule],
   controllers: [AppController],
   providers: [AppService],
 })

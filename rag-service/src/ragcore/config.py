@@ -1,0 +1,21 @@
+import os
+
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+SUPABASE_URL= os.getenv("SUPABASE_URL")
+SUPABASE_SECRET_KEY= os.getenv("SUPABASE_SECRET_KEY")
+SUPABASE_STORAGE_BUCKET= os.getenv("SUPABASE_STORAGE_BUCKET")
+EMBEDDING_MODEL=os.getenv("EMBEDDING_MODEL")
+EMBEDDING_BATCH_SIZE=int(os.getenv("EMBEDDING_BATCH_SIZE"))
+EMBEDDING_DIM=int(os.getenv("EMBEDDING_DIM"))
+
+QDRANT_URL=os.getenv("QDRANT_URL")
+QDRANT_API_KEY=os.getenv("QDRANT_API_KEY")
+QDRANT_COLLECTION=os.getenv("QDRANT_COLLECTION")
+ENV=os.getenv("ENV")
+
+
+
