@@ -8,6 +8,10 @@ from ragcore.pdfExtractor import PdfExtractor
 
 
 app = FastAPI(title = "Priora Mind Cloud Rag Service")
+client = StorageClient(SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_STORAGE_BUCKET)
+chunker = Chunker(100, 20)
+embedding = Embedding(EMBEDDING_MODEL) 
+qdClient = QdClient(url= QDRANT_URL, api_key=QDRANT_API_KEY, timeout= 60)
 
 @app.get("/v1/health")
 async def health():
@@ -22,29 +26,42 @@ async def ingest(request: Request,):
     key = payload["storageKey"]
     source_id = payload["source_id"]
 
-    client = StorageClient(SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_STORAGE_BUCKET)
+   
     file = client.getFile(key)
 
     extractor = PdfExtractor()
     text = extractor.extract(file)
     print(text)
 
-    chunker = Chunker(100, 20)
     chunks = chunker.chunk(text, source_id)
     chunks_text = [chunk["text"] for chunk in chunks]
     print("chunks lenght is:", len(chunks))
-
-    embedding = Embedding(EMBEDDING_MODEL)  
+     
     embeds = embedding.embed(chunks_text)
     print("dimension:", len(embeds[0]) if embeds else 0)
 
-    client = QdClient(url= QDRANT_URL, api_key=QDRANT_API_KEY, timeout= 60)
-    client.ensure_collection(QDRANT_COLLECTION, EMBEDDING_DIM)
+    
+    qdClient.ensure_collection(QDRANT_COLLECTION, EMBEDDING_DIM)
 
-    points = client.map_chunks_to_points(chunks= chunks, vectors= embeds, embedding_dimension= EMBEDDING_DIM, embedding_model= EMBEDDING_MODEL, environment=ENV)
-    client.upsert(collection_name=QDRANT_COLLECTION,points= points )
+    points = qdClient.map_chunks_to_points(chunks= chunks, vectors= embeds, embedding_dimension= EMBEDDING_DIM, embedding_model= EMBEDDING_MODEL, environment=ENV)
+    qdClient.upsert(collection_name=QDRANT_COLLECTION,points= points )
 
     return {
-  "status": "extracted",
-  "textLength": len(file)
+  "status": "Ingestion done",
+  "textLength": len(points)
 }
+
+
+@app.post("/v1/search")
+async def search(request: Request):
+    payload = await request.json()
+    query = payload["query"]
+    topK =int( payload["topK"])
+
+    embeds = embedding.embed([query])[0]
+
+    print(embeds)
+
+    response = qdClient.search(vector= embeds, topk= topK, collection=QDRANT_COLLECTION)
+    print(response)
+    return response

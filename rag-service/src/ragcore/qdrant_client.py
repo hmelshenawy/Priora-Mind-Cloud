@@ -128,4 +128,12 @@ class QdClient:
         return points
 
 
-    
+    def search(self, vector: list[float], topk, collection: str):
+        response = self.client.query_points(
+        collection_name=collection,
+        query=vector,
+        limit=topk,
+        with_payload=True,
+    )
+
+        return response

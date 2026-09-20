@@ -31,7 +31,7 @@ class Chunker:
                         "chunk_index": index,
                         "source_id": source_id,
                         "source_type": "pdf",
-                        "text": page_text,
+                        "text": chunk,
                         "page_no": page_no  ,
 
                         }
