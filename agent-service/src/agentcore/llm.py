@@ -10,32 +10,42 @@ class LlmClient(ABC):
 # -----------------------
     
 class OllamaClient(LlmClient):
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, tools: list, tool_registry: list):
         self.model_name = model_name
+        self.tools= tools
+        self.tool_registry= tool_registry
         
 
 
-    def chat(self, message):
-        print("chat")
-        messages= [{"role": "system", "content": "Your Are Stupid AI Agent"}]
-        messages.append({"role": "user", "content":message})
-        
-        response = chat(
+    def chat(self, messages: list):
+        response =chat(
             model = self.model_name,
             messages=messages,
-            tools= registered_tools
+            tools= self.tools,
+            think=False,
         )
+        print("CONTENT:", repr(response.message.content))
+        print("THINKING:", repr(response.message.thinking))
+        print("TOOLS:", response.message.tool_calls)
         if response.message.tool_calls:
-            agent_reply = response.message.tool_calls
+            
+            messages.append(response.message)
+            for call in response.message.tool_calls:
+                tool_name = call.function.name
+                tool_args = call.function.arguments
 
-            tool_name = agent_reply[0].function.name
-            tool_args = agent_reply[0].function.arguments
+                tool = self.tool_registry.get(tool_name)
+                result = tool(**tool_args)
 
-            tool = tools_registery.get(tool_name)
-            response = tool(**tool_args)
-            print(response)
-            return {"tool":response}
+                messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
+            
+            return {"tool_call": True,
+                    "response" : messages
+                    }
         
-        agent_reply = response.message.content
-        print(agent_reply)
-        return agent_reply
+        messages.append({"role": "assistant", "content": str(response.message.content)})
+        
+        return {
+            "tool_call": False,
+                    "response" : messages
+                    }
