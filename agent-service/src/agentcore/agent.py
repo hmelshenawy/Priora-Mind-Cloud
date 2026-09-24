@@ -39,13 +39,22 @@ class Agent:
         while step < self.steps:
             step+=1
             print("Step: ", step)
-            result =self.llm.chat(self.messages)
+            response =self.llm.chat(self.messages)
             # print(self.messages)
 
-            if result["tool_call"] == False:
-                return self.messages[-1]
+            if response.message.tool_calls:
+                for call in response.message.tool_calls:
+                    tool_name = call.function.name
+                    tool_args = call.function.arguments
 
-            return self.messages[-1]
+                    tool = self.tool_registry.get(tool_name)
+                    result = tool(self.token, **tool_args)
+
+                    self.messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
+            else:
+                    self.messages.append({"role": "assistant", "content": str(response.message.content)})
+                    return  self.messages[-1]
+        return  self.messages[-1]
 
     def clear_history(self):
         self.messages.clear()

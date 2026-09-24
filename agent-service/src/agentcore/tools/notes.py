@@ -5,7 +5,7 @@ import requests
 url = Configs.BACKEND_SERVICE_URL+"/notes"
 # accessToken = Configs.ACCESS_TOKEN
 
-def createNote( mindSpaceId:str, title: str,content: str):
+def createNote(accessToken: str, mindSpaceId:str, title: str,content: str):
     print(url)
 
     response = requests.post(url= url, json={
@@ -53,7 +53,7 @@ create_note_tool = {
 available_tools.append(create_note_tool)
 
 
-def getAllNotes(mindSpaceId: str):
+def getAllNotes(accessToken: str, mindSpaceId: str):
     response = requests.get(url= url, params={
             "mindSpaceId": mindSpaceId,
         }, headers={
