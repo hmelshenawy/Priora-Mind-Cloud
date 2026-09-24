@@ -19,9 +19,9 @@ export class ConversationsController {
   createMessage(
     @Param('id') conversationId: string,
     @Body() dto: CreateMessageDto,
-    @Req() req: { user: { userId: string } },
+    @Req() req: { user: { userId: string }, headers: { authorization: string } },
   ) {
-    return this.conversationMessagesService.create(conversationId, dto, req.user.userId);
+    return this.conversationMessagesService.create(conversationId, dto, req.user.userId, req.headers.authorization);
   }
 
   @Get(':id/messages')

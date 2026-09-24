@@ -10,9 +10,10 @@ import { ConversationsModule } from './conversations/conversations.module';
 import { NotesModule } from './notes/notes.module';
 import { TasksModule } from './tasks/tasks.module';
 import { DocumentsModule } from './documents/documents.module';
+import { AgentModule } from './agent/agent.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule],
+  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule, AgentModule],
   controllers: [AppController],
   providers: [AppService],
 })

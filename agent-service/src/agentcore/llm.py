@@ -1,5 +1,4 @@
 from ollama import chat
-from agentcore.tools import registered_tools, tools_registery
 from abc import ABC, abstractmethod
 
 class LlmClient(ABC):    
@@ -39,7 +38,7 @@ class OllamaClient(LlmClient):
 
                 messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
             
-            return {"tool_call": True,
+                return {"tool_call": True,
                     "response" : messages
                     }
         
