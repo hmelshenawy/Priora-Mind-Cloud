@@ -6,6 +6,7 @@ class ChatRequest(BaseModel):
     message: str
     history: list
     accessToken: str
+    mindSpaceId: str
 
 
 class AgentRequest(BaseModel):

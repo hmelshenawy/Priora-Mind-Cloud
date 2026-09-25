@@ -1,19 +1,21 @@
 from agentcore.tools.tools import available_tools, tools_registery
 from agentcore.config import Configs
 import requests
+from agentcore.context import mindSpaceId, access_token
+
 
 url = Configs.BACKEND_SERVICE_URL+"/notes"
 # accessToken = Configs.ACCESS_TOKEN
 
-def createNote(accessToken: str, mindSpaceId:str, title: str,content: str):
+def createNote( title: str,content: str):
     print(url)
 
     response = requests.post(url= url, json={
-        "mindSpaceId": mindSpaceId,
+        "mindSpaceId": mindSpaceId.get(),
         "title": title,
         "content": content
     }, headers={
-        "Authorization": f"Bearer {accessToken}",
+        "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
     })
 
@@ -31,10 +33,6 @@ create_note_tool = {
         "parameters": {
             "type": "object",
             "properties": {
-                "mindSpaceId": {
-                    "type": "string",
-                    "description": "Exact MindSpace ID provided by the user",
-                },
                 "title": {
                     "type": "string",
                     "description": "Exact value explicitly provided after the word title",
@@ -45,7 +43,7 @@ create_note_tool = {
                 },
                 
             },
-            "required": ["mindSpaceId", "title", "content"],
+            "required": [ "title", "content"],
         },
     },
 }
@@ -53,11 +51,11 @@ create_note_tool = {
 available_tools.append(create_note_tool)
 
 
-def getAllNotes(accessToken: str, mindSpaceId: str):
+def getAllNotes():
     response = requests.get(url= url, params={
-            "mindSpaceId": mindSpaceId,
+            "mindSpaceId": mindSpaceId.get(),
         }, headers={
-            "Authorization": f"Bearer {accessToken}",
+            "Authorization": f"Bearer {access_token.get()}",
                     "Content-Type": "application/json",
         })
     

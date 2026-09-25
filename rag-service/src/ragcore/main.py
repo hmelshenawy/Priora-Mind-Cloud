@@ -25,6 +25,7 @@ async def ingest(request: Request,):
     payload = await request.json()
     key = payload["storageKey"]
     source_id = payload["source_id"]
+    mindSpaceId = payload["mindSpaceId"]
 
    
     file = client.getFile(key)
@@ -43,7 +44,7 @@ async def ingest(request: Request,):
     
     qdClient.ensure_collection(QDRANT_COLLECTION, EMBEDDING_DIM)
 
-    points = qdClient.map_chunks_to_points(chunks= chunks, vectors= embeds, embedding_dimension= EMBEDDING_DIM, embedding_model= EMBEDDING_MODEL, environment=ENV)
+    points = qdClient.map_chunks_to_points(mindSpaceId= mindSpaceId, chunks= chunks, vectors= embeds, embedding_dimension= EMBEDDING_DIM, embedding_model= EMBEDDING_MODEL, environment=ENV)
     qdClient.upsert(collection_name=QDRANT_COLLECTION,points= points )
 
     return {
@@ -57,11 +58,12 @@ async def search(request: Request):
     payload = await request.json()
     query = payload["query"]
     topK =int( payload["topK"])
+    mindSpaceId = payload["mindSpaceId"]
 
     embeds = embedding.embed([query])[0]
 
     print(embeds)
 
-    response = qdClient.search(vector= embeds, topk= topK, collection=QDRANT_COLLECTION)
+    response = qdClient.search(vector= embeds, topk= topK, mindSpaceId= mindSpaceId, collection=QDRANT_COLLECTION)
     print(response)
     return response

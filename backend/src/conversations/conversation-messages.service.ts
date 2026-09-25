@@ -19,6 +19,7 @@ export class ConversationMessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
+    const mindSpaceId = conversation.mindSpaceId
     const accessToken = auth?.replace(/^Bearer\s+/i, '');
     const history = await this.findAll(conversationId, userId)
     const historyList = history.map((message) => ({
@@ -39,7 +40,8 @@ export class ConversationMessagesService {
     const agentReply = await this.agent.runAgent({
       message: dto.content,
       hisotry: historyList,
-      accessToken: accessToken
+      accessToken: accessToken,
+      mindSpaceId: mindSpaceId
     })
 
     console.log("agnet reply:", agentReply)

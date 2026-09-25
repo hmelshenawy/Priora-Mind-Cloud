@@ -1,6 +1,7 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct
+from qdrant_client.models import PointStruct, models
 from qdrant_client.models import Distance, VectorParams
+from qdrant_client.models import Filter, FieldCondition, MatchValue
 from ragcore.config import ENV
 REQUIRED_CHUNK_FIELDS = (   
     "chunk_id",
@@ -52,10 +53,18 @@ class QdClient:
 
         collections = self.client.get_collections()
         names = {collection.name for collection in collections.collections}
+
+        
+        
         if collection_name not in names:
             self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(size=embedding_dimension, distance=Distance.COSINE),
+            )
+            self.client.create_payload_index(
+                collection_name=collection_name,
+                field_name="mindSpaceId",
+                field_schema=models.PayloadSchemaType.KEYWORD,
             )
             print("collection created!!")
             return
@@ -74,6 +83,13 @@ class QdClient:
                 f"Qdrant collection '{collection_name}' distance is "
                 f"{vector_config.distance}, expected Cosine"
             )
+
+        self.client.create_payload_index(
+            collection_name=collection_name,
+            field_name="mindSpaceId",
+            field_schema=models.PayloadSchemaType.KEYWORD,
+        )
+        
         print("Collection Confirmed!!")
 
 
@@ -93,6 +109,7 @@ class QdClient:
 
     def map_chunks_to_points(
     self,
+    mindSpaceId: str,
     chunks: list[dict[str, object]],
     vectors: list[list[float]],
     embedding_model: str,
@@ -115,7 +132,7 @@ class QdClient:
             payload = dict(chunk)
             payload.update(
                 {
-
+                "mindSpaceId": mindSpaceId,
                 "active": True,
                 "approved": True,
                 "embedding_model": embedding_model,
@@ -128,12 +145,21 @@ class QdClient:
         return points
 
 
-    def search(self, vector: list[float], topk, collection: str):
+    def search(self, vector: list[float], topk, mindSpaceId:str,  collection: str):
         response = self.client.query_points(
+            
         collection_name=collection,
         query=vector,
         limit=topk,
         with_payload=True,
+        query_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="mindSpaceId",
+                    match=MatchValue(value=mindSpaceId),
+                )
+            ]
+        ),
     )
 
         return response

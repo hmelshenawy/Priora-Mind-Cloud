@@ -1,7 +1,20 @@
-node_modules
+node_modules/
+dist/
+build/
+coverage/
+.next/
+*.log
 
 # Environment & secrets
 .env
 .env.*
 !.env.example
 *.local
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/

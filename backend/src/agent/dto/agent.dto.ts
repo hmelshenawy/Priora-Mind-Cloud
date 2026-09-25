@@ -18,4 +18,8 @@ export class RunAgentDto {
     @IsNotEmpty()
     accessToken!: string
 
+    @IsNotEmpty()
+    @IsString()
+    mindSpaceId!: string
+
 }

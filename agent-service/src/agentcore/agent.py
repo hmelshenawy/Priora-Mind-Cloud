@@ -5,9 +5,15 @@ from agentcore.config import Configs
 system_prompt = {
     "role": "system",
     "content": (
-        "You are an AI agent. "
-        "use all required tools before answering. "
-        "Do not skip any requested part."
+        """You are an AI agent.
+
+        If the user asks you to perform an action that requires a tool,
+        you MUST call the appropriate tool before claiming the action was completed.
+
+        Never say that a task, note, or other action was created, saved, updated,
+        or deleted unless the corresponding tool was successfully executed.
+
+        Use all required tools before answering."""
     )
 }
 
@@ -19,7 +25,7 @@ class Agent:
         self.tool_registry = tool_registry
         self.messages = []
         self.steps = steps
-        self.messages.append(system_prompt)
+        # self.messages.append(system_prompt)
         self.llm = OllamaClient(
             model_name= self.llm_model,
             tool_registry= self.tool_registry,
@@ -30,6 +36,7 @@ class Agent:
 
     def run(self, message, history):
         step=0
+        self.messages.append(system_prompt)
         self.messages += history
         self.messages.append({"role": "user", "content": message})
 
@@ -48,7 +55,7 @@ class Agent:
                     tool_args = call.function.arguments
 
                     tool = self.tool_registry.get(tool_name)
-                    result = tool(self.token, **tool_args)
+                    result = tool( **tool_args)
 
                     self.messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
             else:
@@ -60,6 +67,3 @@ class Agent:
         self.messages.clear()
 
 
-    def setToken(self, token):
-        self.token = token
-        return

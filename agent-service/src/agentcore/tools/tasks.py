@@ -1,11 +1,12 @@
 from agentcore.tools.tools import available_tools, tools_registery
 from agentcore.config import Configs
 import requests
+from agentcore.context import mindSpaceId, access_token
 
 url = Configs.BACKEND_SERVICE_URL+"/tasks"
-accessToken = Configs.ACCESS_TOKEN
 
-def createTask(mindSpaceId: str,title: str,
+
+def createTask(title: str,
                description: str,executor:str,
             #    accessToken:str
                 ):
@@ -13,12 +14,12 @@ def createTask(mindSpaceId: str,title: str,
     print(url)
 
     response = requests.post(url=url, json={
-                "mindSpaceId": mindSpaceId,
+                "mindSpaceId": mindSpaceId.get(),
                 "title": title,
                 "description": description,
                 "executor": executor
             }, headers ={
-        "Authorization": f"Bearer {accessToken}",
+        "Authorization": f"Bearer {access_token.get()}",
         "Content-Type": "application/json",
     },
             )
@@ -65,11 +66,11 @@ create_task_tool = {
 
 available_tools.append(create_task_tool)
 
-def getAllTasks(mindSpaceId: str):
+def getAllTasks():
     response = requests.get(url=url, params={
-        "mindSpaceId": mindSpaceId
+        "mindSpaceId": mindSpaceId.get()
     }, headers={
-        "Authorization": f"Bearer {accessToken}",
+        "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
     })
 
