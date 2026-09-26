@@ -17,6 +17,7 @@ class OllamaClient(LlmClient):
 
 
     def chat(self, messages: list):
+
         response =chat(
             model = self.model_name,
             messages=messages,

@@ -115,7 +115,7 @@ An authenticated user can change the current MindSpace without seeing or interac
 
 ### Measurable Outcomes
 
-- **SC-001**: At least 95% of authenticated users with a valid MindSpace can open Notes, select an existing note, and read its title and content on their first attempt without assistance.
+- **SC-001**: An authenticated user with a valid MindSpace can open Notes, select an existing note, and read its title and content without assistance.
 - **SC-002**: Users can create and open a valid note in no more than one submission and without manually refreshing the page.
 - **SC-003**: Empty or whitespace-only title and content submissions result in zero created notes, and repeated actions during an active creation result in no duplicate notes.
 - **SC-004**: In all tested MindSpace changes, content from the previous MindSpace is removed before notes for the new MindSpace are displayed, including when earlier requests finish late.

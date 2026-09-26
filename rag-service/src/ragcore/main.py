@@ -9,7 +9,7 @@ from ragcore.pdfExtractor import PdfExtractor
 
 app = FastAPI(title = "Priora Mind Cloud Rag Service")
 client = StorageClient(SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_STORAGE_BUCKET)
-chunker = Chunker(100, 20)
+chunker = Chunker(500, 100)
 embedding = Embedding(EMBEDDING_MODEL) 
 qdClient = QdClient(url= QDRANT_URL, api_key=QDRANT_API_KEY, timeout= 60)
 

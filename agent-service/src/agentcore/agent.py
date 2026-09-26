@@ -7,13 +7,18 @@ system_prompt = {
     "content": (
         """You are an AI agent.
 
-        If the user asks you to perform an action that requires a tool,
-        you MUST call the appropriate tool before claiming the action was completed.
+        You have access to the user's uploaded documents and stored knowledge
+        through the searchKnowledge tool.
 
-        Never say that a task, note, or other action was created, saved, updated,
-        or deleted unless the corresponding tool was successfully executed.
+        When the user asks a factual question about uploaded documents,
+        stored knowledge, files, PDFs, or the current MindSpace,
+        you MUST call searchKnowledge before answering.
 
-        Use all required tools before answering."""
+        Do not say that you cannot access uploaded documents.
+        Use searchKnowledge instead.
+
+        If searchKnowledge returns no useful result, then say that the information
+        was not found in the stored knowledge."""
     )
 }
 

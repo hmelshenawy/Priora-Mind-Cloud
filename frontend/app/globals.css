@@ -16,7 +16,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -363,6 +364,229 @@ a {
   color: #a42525;
 }
 
+.notes {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.65fr);
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.notes-sidebar,
+.note-reader {
+  min-width: 0;
+  border: 1px solid #ded6c8;
+  border-radius: 20px;
+  background: #fffaf2;
+  padding: 24px;
+}
+
+.notes-sidebar > h2,
+.note-reader h2,
+.note-form h3 {
+  margin-top: 0;
+}
+
+.note-form {
+  display: grid;
+  gap: 8px;
+  border-block: 1px solid #ded6c8;
+  padding-block: 20px;
+}
+
+.note-form label {
+  font-weight: 700;
+}
+
+.note-form input,
+.note-form textarea {
+  width: 100%;
+  border: 1px solid #c9c0b2;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 11px 13px;
+}
+
+.note-form textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.note-form button {
+  border: 0;
+  border-radius: 12px;
+  background: #1f2933;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 11px 16px;
+  font-weight: 700;
+}
+
+.note-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.notes-list-title {
+  margin: 20px 0 0;
+}
+
+.notes-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notes-list button {
+  width: 100%;
+  overflow-wrap: anywhere;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: #f3ede4;
+  color: #1f2933;
+  cursor: pointer;
+  padding: 11px 13px;
+  text-align: start;
+}
+
+.notes-list button.active {
+  border-color: #1f2933;
+  background: #e5dacb;
+  font-weight: 700;
+}
+
+.note-reader h2,
+.note-body {
+  overflow-wrap: anywhere;
+}
+
+.note-body {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.notes-error {
+  margin: 4px 0 0;
+  color: #a42525;
+}
+
+.documents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 20px;
+  margin-top: 24px;
+  border: 1px solid #ded6c8;
+  border-radius: 20px;
+  background: #fffaf2;
+  padding: 24px;
+}
+
+.documents-heading {
+  grid-column: 1 / -1;
+}
+
+.documents-heading h2,
+.documents-heading p,
+.document-upload h3,
+.documents-list-panel h3 {
+  margin-top: 0;
+}
+
+.documents-heading p {
+  margin-bottom: 0;
+  color: #5c6670;
+}
+
+.document-upload,
+.documents-list-panel {
+  min-width: 0;
+  border-radius: 16px;
+  background: #f3ede4;
+  padding: 20px;
+}
+
+.document-upload {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.document-upload label {
+  font-weight: 700;
+}
+
+.document-upload input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #c9c0b2;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.document-upload button {
+  border: 0;
+  border-radius: 12px;
+  background: #1f2933;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 11px 16px;
+  font-weight: 700;
+}
+
+.document-upload button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.document-hint,
+.documents-error,
+.documents-success,
+.document-upload-status p,
+.documents-list-status p {
+  margin: 4px 0 0;
+}
+
+.document-hint {
+  color: #5c6670;
+  font-size: 14px;
+}
+
+.documents-error {
+  color: #a42525;
+}
+
+.documents-success {
+  color: #24613d;
+}
+
+.documents-list {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documents-list li {
+  min-width: 0;
+  border: 1px solid #ded6c8;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px 14px;
+  text-align: start;
+}
+
+.documents-list p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.documents-list p + p {
+  margin-top: 6px;
+}
+
 @media (max-width: 520px) {
   .auth-page,
   .landing {
@@ -400,8 +624,20 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .notes {
+    grid-template-columns: 1fr;
+  }
+
+  .documents {
+    grid-template-columns: 1fr;
+    border-radius: 16px;
+    padding: 20px;
+  }
+
   .conversation-pane,
-  .message-pane {
+  .message-pane,
+  .notes-sidebar,
+  .note-reader {
     border-radius: 16px;
     padding: 20px;
   }
