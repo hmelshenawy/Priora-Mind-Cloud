@@ -19,6 +19,7 @@ export class ConversationMessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
+    const userCreatedAt = new Date();
     const mindSpaceId = conversation.mindSpaceId
     const accessToken = auth?.replace(/^Bearer\s+/i, '');
     const history = await this.findAll(conversationId, userId)
@@ -27,32 +28,32 @@ export class ConversationMessagesService {
       content: message.content,
     }))
 
-    await this.prisma.message.create({
-      data: {
-        conversationId,
-        role: MessageRole.USER,
-        content: dto.content.trim(),
-      },
-    })
-
-
-
     const agentReply = await this.agent.runAgent({
       message: dto.content,
-      hisotry: historyList,
+      history: historyList,
       accessToken: accessToken,
-      mindSpaceId: mindSpaceId
+      mindSpaceId: mindSpaceId,
+      
     })
 
     console.log("agnet reply:", agentReply)
 
-    await this.prisma.message.create({
-      data: {
+    
+    await this.prisma.message.createMany({
+      data: [{
+        conversationId,
+        role: MessageRole.USER,
+        content: dto.content.trim(),
+        createdAt: userCreatedAt
+      },
+       {
         conversationId,
         role: MessageRole.ASSISTANT,
         content: agentReply.content,
       },
+    ],
     })
+
     return agentReply;
   }
 

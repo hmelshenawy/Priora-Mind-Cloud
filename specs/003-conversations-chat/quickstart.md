@@ -35,3 +35,12 @@ npm run build
 ```
 
 Use existing test tooling only if it exists at implementation time. Do not add a test framework.
+
+## Validation Record
+
+Validated on 2026-09-26:
+
+- [x] `npm run typecheck` passes from `frontend/`.
+- [x] `npm run build` passes from `frontend/`.
+- [x] Static implementation review confirms the scoped API calls, translated states, title and message validation, duplicate-submit guards, authoritative message reload, MindSpace reset, stale-result guards, unauthorized redirect, unchanged logout flow, semantic controls, logical LTR/RTL styling, and mobile layout rules are present.
+- [ ] Complete the runtime scenarios above with authenticated test data and running NestJS/Agent services. These integrations and browser interactions are not available from static validation alone.

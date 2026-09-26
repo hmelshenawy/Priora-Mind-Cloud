@@ -13,15 +13,15 @@ export class AgentService {
     const url = this.config.getOrThrow("AGENT_SERVICE_URL")
     const timeout = this.config.getOrThrow("AGENT_TIMEOUT_MS")
     const userMessage = run.message
-    const history = run.hisotry
+    const history = run.history
     const token = run.accessToken
     const mindSpaceId = run.mindSpaceId
 
     const response = await fetch(
       url,
       {
-        method:"POST",
-        body:JSON.stringify({
+        method: "POST",
+        body: JSON.stringify({
           message: userMessage,
           history: history,
           accessToken: token,
@@ -32,8 +32,18 @@ export class AgentService {
         }
       }
     )
+
+    if (!response.ok) {
+      throw new Error('Agent request failed');
+    }
+
     const data = await response.json()
     console.log(data)
+
+    if (!data?.content?.trim()) {
+      throw new Error('Agent returned an empty response');
+    }
+
     return data
   }
 

@@ -12,7 +12,7 @@ export class RunAgentDto {
     message!: string;
 
     @IsNotEmpty()
-    hisotry!: ConversationHistoryItem[];
+    history!: ConversationHistoryItem[];
 
     @IsString()
     @IsNotEmpty()
