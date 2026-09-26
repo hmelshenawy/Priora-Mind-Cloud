@@ -17,9 +17,20 @@ def createNote( title: str,content: str):
     }, headers={
         "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
-    })
+    },
+    timeout=(3, 10))
 
-    return {"response": response.text}
+    if not response.ok:
+        return {
+        "ok": False,
+        "status": response.status_code,
+        "error": "REQUEST_FAILED",
+    }
+
+    return {
+        "ok": True,
+        "response": response.json(),
+            }
 
 
 tools_registery[createNote.__name__] = createNote
@@ -57,9 +68,19 @@ def getAllNotes():
         }, headers={
             "Authorization": f"Bearer {access_token.get()}",
                     "Content-Type": "application/json",
-        })
+        }, timeout=(3, 10))
+
+    if not response.ok:
+        return {
+        "ok": False,
+        "status": response.status_code,
+        "error": "REQUEST_FAILED",
+    }
     
-    return {"response": response.text}
+    return {
+        "ok": True,
+        "response": response.json
+        }
 
 available_tools.append(getAllNotes)
 tools_registery[getAllNotes.__name__]= getAllNotes

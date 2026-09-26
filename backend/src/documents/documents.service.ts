@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { StorageService } from './storage.service';
 import { randomUUID } from 'crypto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -22,7 +22,11 @@ export class DocumentsService {
         }
 
         const storageKey = `users/${userId}/mindspaces/${mindSpaceId}/documents/${randomUUID()}.pdf`;
-        console.log(storageKey)
+
+        const existKey = await this.prisma.document.findFirst({where: {storageKey: storageKey, mindSpaceId: mindSpaceId}})
+        if(existKey){
+            throw new ConflictException("Storage Key already exist!!")
+        }
 
         const mindspace = await this.prisma.mindSpace.findFirst({ where: { id: mindSpaceId, userId: userId } })
         if (!mindspace) {
@@ -36,16 +40,16 @@ export class DocumentsService {
         }
         const documentMetaData = await this.prisma.document.create({ data: { fileName: file.originalname, mindSpaceId: mindSpaceId, storageKey: result } })
 
+        if (!documentMetaData) {
+            throw new BadRequestException("Failed to add row to database!!")
+        }
+
         try {
             const rag = await this.rag.ingest(storageKey, documentMetaData.id, mindSpaceId)
-
-
-
             const updatedMetaData = await this.prisma.document.update({
                 where: { id: documentMetaData.id, },
                 data: { status: 'READY' },
             })
-
             return {
                 result,
                 documentMetaData: updatedMetaData,
@@ -53,7 +57,6 @@ export class DocumentsService {
             };
         } catch (error) {
             console.error('RAG ingestion failed', error);
-
             await this.prisma.document.update({
                 where: { id: documentMetaData.id, },
                 data: { status: 'FAILED' },

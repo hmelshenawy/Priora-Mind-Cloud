@@ -22,11 +22,16 @@ def searchKnowledge( query: str) -> dict:
             "query": query,
             "topK": 5,
         "mindSpaceId": mindSpaceId.get(),
-        }
+        },
+          timeout=(3, 10)
     )
 
-    print("STATUS:", response.status_code)
-    print("BODY:", response.text)
+    if not response.ok:
+        return{
+            "ok": False,
+            "status": response.status_code,
+            "error": "RAG Failed!!!"
+        }
 
     return response.json()
 

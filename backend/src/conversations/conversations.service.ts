@@ -20,12 +20,12 @@ export class ConversationsService {
     return conversation;
   }
 
-  async findAll(minspaceId: string, userId: string) {
-    const ok = await this.primsa.mindSpace.findFirst({ where: { id: minspaceId, userId: userId } })
+  async findAll(mindSpaceId: string, userId: string) {
+    const ok = await this.primsa.mindSpace.findFirst({ where: { id: mindSpaceId, userId: userId } })
     if (!ok) {
-      throw new NotFoundException("minspace not found!!")
+      throw new NotFoundException("mindspace not found!!")
     }
-    const conversations = await this.primsa.conversation.findMany({ where: { mindSpaceId: minspaceId }, orderBy: { updatedAt: "desc" } })
+    const conversations = await this.primsa.conversation.findMany({ where:  { mindSpaceId: mindSpaceId , mindSpace: {userId: userId} } , orderBy: { updatedAt: "desc" } })
     return conversations;
   }
 

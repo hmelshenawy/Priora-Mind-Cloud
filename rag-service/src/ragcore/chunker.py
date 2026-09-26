@@ -2,12 +2,20 @@ from uuid import NAMESPACE_URL, uuid5
 
 class Chunker:
     def __init__(self,  chunk_size: int = 500, overlap: int = 50):
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than 0")
+
+        if overlap < 0:
+            raise ValueError("overlap cannot be negative")
+
+        if overlap >= chunk_size:
+            raise ValueError("overlap must be smaller than chunk_size")
         self.chunk_size = chunk_size
         self.overlap = overlap
         
         
 
-    def chunk(self, pages: list[dict[str : str]],source_id: str):
+    def chunk(self, pages: list[dict],source_id: str):
         
         chunks: list[dict] = []
         index = 0 
@@ -39,6 +47,6 @@ class Chunker:
                     )
                     index +=1
 
-                    start = end - self.overlap
+                start = end - self.overlap
 
         return chunks

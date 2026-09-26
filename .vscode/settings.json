@@ -7,7 +7,7 @@
         {
             "folderPath": "Priora Mind Cloud\\backend\\",
             "color": "foldercolorizer.color_ffd787",
-            "badge": "BC"
+            "badge": "Bk"
         },
         {
             "folderPath": "Priora Mind Cloud\\agent-service\\",
@@ -21,6 +21,10 @@
         {
             "folderPath": "Priora Mind Cloud\\specs\\",
             "badge": "sp"
+        },
+        {
+            "folderPath": "Priora Mind Cloud\\agent-service\\src\\agentcore\\tools\\",
+            "badge": "TL"
         }
     ]
 }

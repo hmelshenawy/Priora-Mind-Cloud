@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { ConversationMessagesService } from './conversation-messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -39,8 +39,7 @@ export class ConversationsController {
   }
 
   @Get()
-  findAll(@Query() query: any, @Req() req: any) {
-    const mindSpaceId = query.minspaceId
+  findAll(@Query("mindSpaceId", ParseUUIDPipe) mindSpaceId: string, @Req() req: any) {
     const userId = req.user.userId
     return this.conversationsService.findAll(mindSpaceId, userId);
   }

@@ -22,10 +22,16 @@ def createTask(title: str,
         "Authorization": f"Bearer {access_token.get()}",
         "Content-Type": "application/json",
     },
+    timeout=(3, 10)
             )
-    print(response)
 
-    return {"response":response.text}
+    if not response.ok:
+        return{
+            "ok": False,
+            "status": response.status_code,
+            "error": "Create Task Failed!!"
+        }
+    return {"response":response.json()}
 
 
 available_tools.append(createTask)
@@ -72,9 +78,16 @@ def getAllTasks():
     }, headers={
         "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
-    })
+    },
+    timeout=(3, 10))
 
-    return {"response": response.text}
+    if not response.ok:
+        return{
+            "ok": False,
+            "status": response.status_code,
+            "error": "GET TASKS FAILED!!"
+        }
+    return {"response": response.json()}
 
 available_tools.append(getAllTasks)
 tools_registery[getAllTasks.__name__]= getAllTasks

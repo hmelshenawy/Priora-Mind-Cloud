@@ -42,7 +42,7 @@ export async function listConversations(accessToken: string, mindSpaceId: string
   let response: Response;
   try {
     response = await fetch(
-      `${API_BASE_URL}/conversations?minspaceId=${encodeURIComponent(mindSpaceId)}`,
+      `${API_BASE_URL}/conversations?mindSpaceId=${encodeURIComponent(mindSpaceId)}`,
       {headers: {Authorization: `Bearer ${accessToken}`}},
     );
   } catch {

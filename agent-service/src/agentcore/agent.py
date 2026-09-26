@@ -61,8 +61,8 @@ class Agent:
                     tool_name = call.function.name
                     tool_args = call.function.arguments
 
-                    tool = self.tool_registry.get(tool_name)
-                    result = tool( **tool_args)
+                    
+                    result = self.call_tool(name=tool_name, args=tool_args)
 
                     messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
             else:
@@ -71,5 +71,20 @@ class Agent:
         return  messages[-1]
 
     
-
+    def call_tool(self, name: str, args: dict):
+        tool = self.tool_registry.get(name)
+        if not tool:
+            return {
+                "ok": False,
+                "status": "UNKNOWN TOOL!!"
+            }
+        
+        try:
+            result = tool( **args)
+        except Exception as e:
+            print(str(e))
+            result = {"ok": False,
+                    "status": "TOOL EXECUTION FAILED!!",
+                    }
+        return result
 
