@@ -11,6 +11,8 @@ import {
   saveSelectedMindSpaceId,
 } from '@/lib/mindspace-selection';
 import {Chat} from '@/components/chat';
+import {Documents} from '@/components/documents';
+import {Notes} from '@/components/notes';
 
 type ShellStatus = 'loading' | 'success' | 'empty' | 'error';
 
@@ -145,7 +147,13 @@ export function AppShell() {
             </div>
           ) : null}
         </section>
-        {status === 'success' && selectedId ? <Chat mindSpaceId={selectedId} /> : null}
+        {status === 'success' && selectedId ? (
+          <>
+            <Documents key={selectedId} mindSpaceId={selectedId} />
+            <Chat mindSpaceId={selectedId} />
+            <Notes key={selectedId} mindSpaceId={selectedId} />
+          </>
+        ) : null}
       </main>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Controller, Post, Req, Param, Body, UseInterceptors, UploadedFile, UseGuards, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Req, Param, Body, UseInterceptors, UploadedFile, UseGuards, Delete, Query } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtGuard } from 'src/auth/guards/jwt-guard';
@@ -18,6 +18,12 @@ export class DocumentsController {
     const mindSpaceId = body.mindSpaceId
     console.log(file)
     return this.documentsService.upload(file, mindSpaceId, userId)
+  }
+
+  @Get()
+  getAll(@Query('mindSpaceId') mindSpaceId: string,@Req() req: any){
+    const userId = req.user.userId
+    return this.documentsService.getAll(userId, mindSpaceId)
   }
 
 

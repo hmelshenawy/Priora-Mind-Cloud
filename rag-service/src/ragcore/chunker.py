@@ -10,12 +10,13 @@ class Chunker:
     def chunk(self, pages: list[dict[str : str]],source_id: str):
         
         chunks: list[dict] = []
+        index = 0 
 
         for page in pages:
             page_text = page["page_text"]
             page_no = page["page_no"]
             start = 0
-            index = 0 
+            
 
 
             while start < len(page_text):
