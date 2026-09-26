@@ -149,9 +149,9 @@ export function AppShell() {
         </section>
         {status === 'success' && selectedId ? (
           <>
-            <Documents key={selectedId} mindSpaceId={selectedId} />
+            <Documents key={`documents-${selectedId}`} mindSpaceId={selectedId} />
             <Chat mindSpaceId={selectedId} />
-            <Notes key={selectedId} mindSpaceId={selectedId} />
+            <Notes key={`notes-${selectedId}`} mindSpaceId={selectedId} />
           </>
         ) : null}
       </main>
