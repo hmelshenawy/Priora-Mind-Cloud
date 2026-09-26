@@ -28,7 +28,7 @@ class Agent:
         self.tools = tools
         self.llm_model= llm_model
         self.tool_registry = tool_registry
-        self.messages = []
+        # self.messages = []
         self.steps = steps
         # self.messages.append(system_prompt)
         self.llm = OllamaClient(
@@ -41,20 +41,22 @@ class Agent:
 
     def run(self, message, history):
         step=0
-        self.messages.append(system_prompt)
-        self.messages += history
-        self.messages.append({"role": "user", "content": message})
+        messages = []
+        messages.append(system_prompt)
+        messages += history
+        messages.append({"role": "user", "content": message})
 
-        print("all history:", self.messages)
-        # response = self.llm.chat(self.messages)
+        print("all history:", messages)
+        
 
         while step < self.steps:
             step+=1
             print("Step: ", step)
-            response =self.llm.chat(self.messages)
-            # print(self.messages)
+            response =self.llm.chat(messages)
+           
 
             if response.message.tool_calls:
+                messages.append(response.message)
                 for call in response.message.tool_calls:
                     tool_name = call.function.name
                     tool_args = call.function.arguments
@@ -62,13 +64,12 @@ class Agent:
                     tool = self.tool_registry.get(tool_name)
                     result = tool( **tool_args)
 
-                    self.messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
+                    messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
             else:
-                    self.messages.append({"role": "assistant", "content": str(response.message.content)})
-                    return  self.messages[-1]
-        return  self.messages[-1]
+                    messages.append({"role": "assistant", "content": str(response.message.content)})
+                    return  messages[-1]
+        return  messages[-1]
 
-    def clear_history(self):
-        self.messages.clear()
+    
 
 

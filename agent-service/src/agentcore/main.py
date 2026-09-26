@@ -26,5 +26,5 @@ async def chat(body: ChatRequest):
     mindSpaceId.set(mindSpace)
 
     response = agent.run(message, history)
-    agent.clear_history()
+    
     return response

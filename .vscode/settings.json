@@ -3,6 +3,24 @@
         {
             "folderPath": "Priora Mind Cloud\\docs\\",
             "color": "foldercolorizer.color_0000ff"
+        },
+        {
+            "folderPath": "Priora Mind Cloud\\backend\\",
+            "color": "foldercolorizer.color_ffd787",
+            "badge": "BC"
+        },
+        {
+            "folderPath": "Priora Mind Cloud\\agent-service\\",
+            "color": "foldercolorizer.color_00d75f",
+            "badge": "Ag"
+        },
+        {
+            "folderPath": "Priora Mind Cloud\\rag-service\\",
+            "color": "foldercolorizer.color_87afff"
+        },
+        {
+            "folderPath": "Priora Mind Cloud\\specs\\",
+            "badge": "sp"
         }
     ]
 }
