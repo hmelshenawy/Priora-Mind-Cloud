@@ -11,10 +11,21 @@ import { NotesModule } from './notes/notes.module';
 import { TasksModule } from './tasks/tasks.module';
 import { DocumentsModule } from './documents/documents.module';
 import { AgentModule } from './agent/agent.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule, AgentModule],
+  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule, AgentModule,
+    ThrottlerModule.forRoot({
+      throttlers:[{ttl: 60000,
+        limit:100,
+      }]
+    })
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, {
+    provide: APP_GUARD,
+    useClass: ThrottlerGuard,
+  }, ],
 })
 export class AppModule {}

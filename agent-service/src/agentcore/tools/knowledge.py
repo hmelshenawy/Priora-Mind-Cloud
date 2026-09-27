@@ -23,7 +23,7 @@ def searchKnowledge( query: str) -> dict:
             "topK": 5,
         "mindSpaceId": mindSpaceId.get(),
         },
-          timeout=(3, 10)
+          timeout=(60, 120)
     )
 
     if not response.ok:

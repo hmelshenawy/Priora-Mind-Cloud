@@ -13,7 +13,6 @@ class StorageClient:
 
 
     def getFile(self, storageKey: str):
-        print(storageKey)
         file = self.client.storage.from_(self.bucket).download(storageKey)
         print(file[:5])
         return file

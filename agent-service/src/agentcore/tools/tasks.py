@@ -11,7 +11,7 @@ def createTask(title: str,
             #    accessToken:str
                 ):
     
-    print(url)
+    
 
     response = requests.post(url=url, json={
                 "mindSpaceId": mindSpaceId.get(),
@@ -22,7 +22,7 @@ def createTask(title: str,
         "Authorization": f"Bearer {access_token.get()}",
         "Content-Type": "application/json",
     },
-    timeout=(3, 10)
+    timeout=(60, 120)
             )
 
     if not response.ok:
@@ -79,7 +79,7 @@ def getAllTasks():
         "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
     },
-    timeout=(3, 10))
+    timeout=(60, 120))
 
     if not response.ok:
         return{

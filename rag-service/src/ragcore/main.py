@@ -32,7 +32,7 @@ async def ingest(request: Request,):
 
     extractor = PdfExtractor()
     text = extractor.extract(file)
-    print(text)
+    
 
     chunks = chunker.chunk(text, source_id)
     chunks_text = [chunk["text"] for chunk in chunks]
@@ -62,8 +62,5 @@ async def search(request: Request):
 
     embeds = embedding.embed([query])[0]
 
-    print(embeds)
-
     response = qdClient.search(vector= embeds, topk= topK, mindSpaceId= mindSpaceId, collection=QDRANT_COLLECTION)
-    print(response)
     return response

@@ -5,12 +5,7 @@ class PdfExtractor:
     def __init__(self):
         pass    
         
-    def extract(self, file_bytes):
-        # print(type(file_bytes))
-        # print("size:", len(file_bytes))
-        # print("start:", file_bytes[:10])
-        # print("end:", file_bytes[-20:])
-    
+    def extract(self, file_bytes):    
         self.pdf = PdfReader(BytesIO(file_bytes))
         text = []
         for index, page in enumerate(self.pdf.pages):

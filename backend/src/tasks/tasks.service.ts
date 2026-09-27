@@ -15,11 +15,16 @@ export class TasksService {
       throw new NotFoundException('MindSpace not found');
     }
 
+    const exist = await this.isExist(dto)
+    if(exist){
+      return exist
+    }
+
     return this.prisma.task.create({
       data: {
         mindSpaceId: dto.mindSpaceId,
         title: dto.title.trim(),
-        description: dto.description?.trim(),
+        description: dto.description?.trim() ?? null,
         executor: dto.executor,
       },
     });
@@ -67,6 +72,19 @@ export class TasksService {
     await this.findOne(id, userId);
 
     return this.prisma.task.delete({ where: { id } });
+  }
+
+  async isExist(dto: CreateTaskDto){
+    const description = dto.description?.trim() ?? null
+    const title = dto.title.trim()
+    const mindSpaceId = dto.mindSpaceId
+    const executor = dto.executor
+    const dupWindow = new Date(Date.now()- 2 * 60 * 1000 )
+
+    const exist = await this.prisma.task.findFirst({where: {title: title, description: description, mindSpaceId, executor:executor, createdAt:{gte: dupWindow }}})
+    if(exist){
+      return exist
+    }
   }
 }
 

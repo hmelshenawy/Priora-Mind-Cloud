@@ -8,7 +8,7 @@ url = Configs.BACKEND_SERVICE_URL+"/notes"
 # accessToken = Configs.ACCESS_TOKEN
 
 def createNote( title: str,content: str):
-    print(url)
+
 
     response = requests.post(url= url, json={
         "mindSpaceId": mindSpaceId.get(),
@@ -18,7 +18,7 @@ def createNote( title: str,content: str):
         "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
     },
-    timeout=(3, 10))
+    timeout=(30, 60))
 
     if not response.ok:
         return {
@@ -63,12 +63,14 @@ available_tools.append(create_note_tool)
 
 
 def getAllNotes():
+   
+
     response = requests.get(url= url, params={
             "mindSpaceId": mindSpaceId.get(),
         }, headers={
             "Authorization": f"Bearer {access_token.get()}",
                     "Content-Type": "application/json",
-        }, timeout=(3, 10))
+        }, timeout=(30, 60))
 
     if not response.ok:
         return {
@@ -79,7 +81,7 @@ def getAllNotes():
     
     return {
         "ok": True,
-        "response": response.json
+        "response": response.json()
         }
 
 available_tools.append(getAllNotes)
