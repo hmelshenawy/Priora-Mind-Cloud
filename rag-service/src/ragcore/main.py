@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, Request
 from ragcore.storage import StorageClient
 from ragcore.config import ENV, SUPABASE_SECRET_KEY, SUPABASE_STORAGE_BUCKET, SUPABASE_URL, EMBEDDING_BATCH_SIZE,EMBEDDING_DIM, EMBEDDING_MODEL, QDRANT_API_KEY,QDRANT_COLLECTION,QDRANT_URL
-from ragcore.chunker import Chunker
+from ragcore.chunker import Chunker, WordChunker
 from ragcore.embedding import Embedding
 from ragcore.qdrant_client import QdClient
 from ragcore.pdfExtractor import PdfExtractor
@@ -9,7 +9,7 @@ from ragcore.pdfExtractor import PdfExtractor
 
 app = FastAPI(title = "Priora Mind Cloud Rag Service")
 client = StorageClient(SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_STORAGE_BUCKET)
-chunker = Chunker(500, 100)
+chunker = WordChunker(size=75, overlap=15)
 embedding = Embedding(EMBEDDING_MODEL) 
 qdClient = QdClient(url= QDRANT_URL, api_key=QDRANT_API_KEY, timeout= 60)
 

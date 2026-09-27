@@ -1,6 +1,11 @@
 from uuid import NAMESPACE_URL, uuid5
+from abc import ABC, abstractmethod
 
-class Chunker:
+class BaseChunker(ABC):
+    @abstractmethod
+    def chunk(self):
+        pass
+class Chunker(BaseChunker):
     def __init__(self,  chunk_size: int = 500, overlap: int = 50):
         if chunk_size <= 0:
             raise ValueError("chunk_size must be greater than 0")
@@ -50,3 +55,51 @@ class Chunker:
                 start = end - self.overlap
 
         return chunks
+
+
+class WordChunker(BaseChunker):
+    def __init__(self, size: int, overlap: int):
+        if size <= 0:
+            raise ValueError("chunk_size must be greater than 0")
+        if overlap < 0:
+            raise ValueError("overlap cannot be negative")
+        if overlap >= size:
+            raise ValueError("overlap must be smaller than chunk_size")
+        
+        self.size = size
+        self.overlap = overlap
+        
+
+
+    def chunk(self, pages:list[dict], source_id:str):
+        chunks: list[dict] = []
+        index = 0 
+
+        for page in pages:
+            page_text = page["page_text"].split()
+            page_no = page["page_no"]
+            start = 0
+
+            while start < len(page_text):
+                end = start + self.size
+                chunk = " ".join(page_text[start: end])
+                chunks.append(
+                            {
+                            "chunk_id": str(uuid5(NAMESPACE_URL, f"{source_id}:{index}")),
+                            "chunk_index": index,
+                            "source_id": source_id,
+                            "source_type": "pdf",
+                            "text": chunk,
+                            "page_no": page_no  ,
+
+                            }
+                )
+                index += 1
+
+                print("_______CHUNK__________",chunk)
+
+                start = end - self.overlap
+
+        return chunks
+
+    
