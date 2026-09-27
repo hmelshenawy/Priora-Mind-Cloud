@@ -1,0 +1,39 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: priora-backend
+    env_file:
+      - ./backend/.env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - agent
+      - rag
+
+  agent:
+    build:
+      context: ./agent-service
+    container_name: priora-agent
+    env_file:
+      - ./agent-service/.env.docker
+    ports:
+      - "8000:8000"
+
+  rag:
+    build:
+      context: ./rag-service
+    container_name: priora-rag
+    env_file:
+      - ./rag-service/.env.docker
+    ports:
+      - "8800:8800"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: priora-frontend
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend

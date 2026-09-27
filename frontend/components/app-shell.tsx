@@ -13,6 +13,7 @@ import {
 import {Chat} from '@/components/chat';
 import {Documents} from '@/components/documents';
 import {Notes} from '@/components/notes';
+import {Tasks} from '@/components/tasks';
 
 type ShellStatus = 'loading' | 'success' | 'empty' | 'error';
 
@@ -152,6 +153,7 @@ export function AppShell() {
             <Documents key={`documents-${selectedId}`} mindSpaceId={selectedId} />
             <Chat mindSpaceId={selectedId} />
             <Notes key={`notes-${selectedId}`} mindSpaceId={selectedId} />
+            <Tasks key={`tasks-${selectedId}`} mindSpaceId={selectedId} />
           </>
         ) : null}
       </main>
