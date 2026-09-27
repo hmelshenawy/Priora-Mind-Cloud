@@ -5,8 +5,8 @@ services:
     container_name: priora-backend
     env_file:
       - ./backend/.env.docker
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       - agent
       - rag
@@ -32,6 +32,10 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        NEST_INTERNAL_API_BASE_URL: http://backend:3000
+    environment:
+      NEST_INTERNAL_API_BASE_URL: http://backend:3000
     container_name: priora-frontend
     ports:
       - "3001:3000"

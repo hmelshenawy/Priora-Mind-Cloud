@@ -22,7 +22,7 @@ export class LoginError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_NEST_API_BASE_URL ?? 'http://localhost:3000/api/v1';
+const API_BASE_URL = '/api/v1';
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   let response: Response;
