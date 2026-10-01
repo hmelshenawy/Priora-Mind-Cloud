@@ -64,3 +64,16 @@ async def search(request: Request):
 
     response = qdClient.search(vector= embeds, topk= topK, mindSpaceId= mindSpaceId, collection=QDRANT_COLLECTION)
     return response
+
+
+@app.post("/v1/embed")
+async def embed(request: Request):
+    payload = await request.json()
+    texts = payload["texts"]
+    print(texts)
+
+    vectors = embedding.embed(texts)
+
+    return {
+        "vectors": vectors
+    }

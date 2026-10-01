@@ -22,6 +22,7 @@ export class ConversationMessagesService {
     const userCreatedAt = new Date();
     const mindSpaceId = conversation.mindSpaceId
     const accessToken = auth?.replace(/^Bearer\s+/i, '');
+    const sourceMessageId = ""   // sebo fadi now
     const history = await this.findAll(conversationId, userId)
     const historyList = history.map((message) => ({
       role: message.role.toLowerCase(),
@@ -33,6 +34,7 @@ export class ConversationMessagesService {
       history: historyList,
       accessToken: accessToken,
       mindSpaceId: mindSpaceId,
+      sourceMessageId: sourceMessageId
       
     })
 

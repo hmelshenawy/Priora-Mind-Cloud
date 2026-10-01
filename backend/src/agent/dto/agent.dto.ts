@@ -16,10 +16,14 @@ export class RunAgentDto {
 
     @IsString()
     @IsNotEmpty()
-    accessToken!: string
+    accessToken!: string;
 
     @IsNotEmpty()
     @IsString()
-    mindSpaceId!: string
+    mindSpaceId!: string;
+
+    @IsNotEmpty()
+    @IsString()
+    sourceMessageId!: string;
 
 }

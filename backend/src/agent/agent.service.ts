@@ -16,6 +16,7 @@ export class AgentService {
     const history = run.history
     const token = run.accessToken
     const mindSpaceId = run.mindSpaceId
+    const sourceMessageId = run.sourceMessageId
     try {
       const response = await fetch(
         url,
@@ -26,6 +27,7 @@ export class AgentService {
             history: history,
             accessToken: token,
             mindSpaceId: mindSpaceId,
+            sourceMessageId: sourceMessageId,
           }),
           headers: {
             'Content-Type': 'application/json',

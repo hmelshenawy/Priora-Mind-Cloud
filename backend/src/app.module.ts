@@ -13,6 +13,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { AgentModule } from './agent/agent.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { APP_GUARD } from '@nestjs/core';
+import { MemoryModule } from './memory/memory.module';
 
 @Module({
   imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule, AgentModule,
@@ -20,7 +21,8 @@ import { APP_GUARD } from '@nestjs/core';
       throttlers:[{ttl: 60000,
         limit:100,
       }]
-    })
+    }),
+    MemoryModule
   ],
   controllers: [AppController],
   providers: [AppService, {

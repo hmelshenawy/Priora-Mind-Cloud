@@ -24,7 +24,7 @@ async def chat(body: ChatRequest):
     token_ctx = access_token.set(token)
     mindSpace_ctx = mindSpaceId.set(mindSpace)
     try:
-        response = agent.run(message, history)
+        response =await agent.run(message, history)
         return response
     finally:
         access_token.reset(token_ctx)

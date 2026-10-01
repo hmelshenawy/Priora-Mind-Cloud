@@ -42,6 +42,7 @@ model User {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   mindSpaces   MindSpace[]
+  memories     Memory[]
 }
 
 model MindSpace {
@@ -57,6 +58,7 @@ model MindSpace {
   notes         Note[]
   tasks         Task[]
   documents     Document[]
+  memories      Memory[]
 
   @@index([userId])
 }
@@ -83,6 +85,7 @@ model Message {
   createdAt      DateTime    @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  memories     Memory[]
 
   @@index([conversationId])
   @@index([createdAt])
@@ -130,4 +133,36 @@ model Document {
 
   @@index([mindSpaceId])
   @@index([status])
+}
+
+// ______________________________________MIGRATION 2
+
+enum MemoryType {
+  FACT
+  PREFERENCE
+  GOAL
+  DECISION
+}
+
+model Memory {
+  id          String @id @default(uuid())
+  userId      String
+  mindSpaceId String
+
+  type       MemoryType
+  content    String
+  confidence Float?
+  embedding  Unsupported("vector(1024)")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mindSpace MindSpace @relation(fields: [mindSpaceId], references: [id], onDelete: Cascade)
+  message   Message?  @relation(fields: [messageId], references: [id])
+  messageId String?
+
+  @@index([userId])
+  @@index([mindSpaceId])
+  @@index([userId, mindSpaceId])
 }
