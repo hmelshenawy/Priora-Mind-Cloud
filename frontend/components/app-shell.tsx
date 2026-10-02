@@ -14,6 +14,7 @@ import {Chat} from '@/components/chat';
 import {Documents} from '@/components/documents';
 import {Notes} from '@/components/notes';
 import {Tasks} from '@/components/tasks';
+import {CreateMindSpace} from '@/components/create-mindspace';
 
 type ShellStatus = 'loading' | 'success' | 'empty' | 'error';
 
@@ -118,10 +119,12 @@ export function AppShell() {
           ) : null}
 
           {status === 'empty' ? (
-            <div className="shell-state" aria-live="polite">
-              <h2>{t('emptyTitle')}</h2>
-              <p>{t('emptyDescription')}</p>
-            </div>
+            <CreateMindSpace onCreated={(mindSpace) => {
+              saveSelectedMindSpaceId(mindSpace.id);
+              setMindSpaces([mindSpace]);
+              setSelectedId(mindSpace.id);
+              setStatus('success');
+            }} />
           ) : null}
 
           {status === 'error' ? (

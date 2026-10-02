@@ -15,7 +15,15 @@
     "networkError": "تعذر الاتصال بالخادم. حاول مرة أخرى.",
     "landingTitle": "تم تسجيل الدخول",
     "landingDescription": "هذه هي المنطقة المحمية في Priora MindCloud.",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "createAccount": "إنشاء حساب",
+    "registerDescription": "أنشئ حسابك للبدء.",
+    "emailInvalid": "أدخل بريدًا إلكترونيًا صالحًا.",
+    "passwordTooShort": "استخدم 5 أحرف على الأقل.",
+    "duplicateEmail": "يوجد حساب بهذا البريد الإلكتروني. يرجى تسجيل الدخول.",
+    "registrationLoginFailed": "تم إنشاء حسابك، لكن تعذر تسجيل الدخول. حاول تسجيل الدخول مرة أخرى.",
+    "registerLoading": "يرجى الانتظار...",
+    "retryLogin": "إعادة محاولة تسجيل الدخول"
   },
   "appShell": {
     "brand": "Priora MindCloud",
@@ -127,5 +135,14 @@
     "sending": "جارٍ الإرسال...",
     "messageValidation": "أدخل رسالة قبل الإرسال.",
     "sendError": "تعذر إرسال الرسالة. حاول مرة أخرى."
+  },
+  "onboarding": {
+    "title": "أنشئ مساحة التفكير الأولى",
+    "description": "اختر اسمًا لمساحة التفكير للدخول إلى مساحة عملك.",
+    "nameLabel": "اسم مساحة التفكير",
+    "nameRequired": "أدخل اسم مساحة التفكير.",
+    "create": "إنشاء مساحة التفكير",
+    "creating": "جارٍ الإنشاء...",
+    "createError": "تعذر إنشاء مساحة التفكير. يرجى المحاولة مرة أخرى."
   }
 }

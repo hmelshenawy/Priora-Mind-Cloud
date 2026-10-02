@@ -15,7 +15,15 @@
     "networkError": "We could not reach the server. Please try again.",
     "landingTitle": "You are signed in",
     "landingDescription": "This is the protected Priora MindCloud area.",
-    "logout": "Log out"
+    "logout": "Log out",
+    "createAccount": "Create account",
+    "registerDescription": "Create your account to get started.",
+    "emailInvalid": "Enter a valid email address.",
+    "passwordTooShort": "Use at least 5 characters.",
+    "duplicateEmail": "An account with this email already exists. Please log in.",
+    "registrationLoginFailed": "Your account was created, but login failed. Try logging in again.",
+    "registerLoading": "Please wait...",
+    "retryLogin": "Retry login"
   },
   "appShell": {
     "brand": "Priora MindCloud",
@@ -127,5 +135,14 @@
     "sending": "Sending...",
     "messageValidation": "Enter a message before sending.",
     "sendError": "The message could not be sent. Please try again."
+  },
+  "onboarding": {
+    "title": "Create your first MindSpace",
+    "description": "Give your MindSpace a name to enter your workspace.",
+    "nameLabel": "MindSpace name",
+    "nameRequired": "Enter a MindSpace name.",
+    "create": "Create MindSpace",
+    "creating": "Creating...",
+    "createError": "The MindSpace could not be created. Please try again."
   }
 }

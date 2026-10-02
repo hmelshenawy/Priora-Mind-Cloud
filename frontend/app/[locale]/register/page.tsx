@@ -4,7 +4,7 @@ import {FormEvent, useState} from 'react';
 import {useLocale, useTranslations} from 'next-intl';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
-import {LoginError, login} from '@/lib/api/auth';
+import {login, register, RegisterError} from '@/lib/api/auth';
 import {saveAuthState} from '@/lib/auth-state';
 import {clearSelectedMindSpaceId} from '@/lib/mindspace-selection';
 
@@ -13,7 +13,7 @@ type FieldErrors = {
   password?: string;
 };
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const t = useTranslations('auth');
   const locale = useLocale();
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,7 +33,9 @@ export default function LoginPage() {
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail) nextErrors.email = t('emailRequired');
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) nextErrors.email = t('emailInvalid');
     if (!password) nextErrors.password = t('passwordRequired');
+    else if (password.length < 5) nextErrors.password = t('passwordTooShort');
 
     setFieldErrors(nextErrors);
     setFormError('');
@@ -41,14 +44,22 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
+    let accountCreated = registered;
     try {
+      if (!accountCreated) {
+        await register({email: trimmedEmail, password});
+        accountCreated = true;
+        setRegistered(true);
+      }
       const authState = await login({email: trimmedEmail, password});
       saveAuthState(authState);
       clearSelectedMindSpaceId();
       router.replace(`/${locale}/app`);
     } catch (error) {
-      if (error instanceof LoginError && error.code === 'invalidCredentials') {
-        setFormError(t('invalidCredentials'));
+      if (accountCreated) {
+        setFormError(t('registrationLoginFailed'));
+      } else if (error instanceof RegisterError && error.code === 'duplicateEmail') {
+        setFormError(t('duplicateEmail'));
       } else {
         setFormError(t('networkError'));
       }
@@ -59,9 +70,9 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
-      <section className="auth-card" aria-labelledby="login-title">
-        <h1 id="login-title">{t('loginTitle')}</h1>
-        <p>{t('loginDescription')}</p>
+      <section className="auth-card" aria-labelledby="register-title">
+        <h1 id="register-title">{t('createAccount')}</h1>
+        <p>{t('registerDescription')}</p>
 
         {formError ? (
           <div className="form-error" role="alert">
@@ -69,7 +80,7 @@ export default function LoginPage() {
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate aria-busy={isLoading}>
           <div className="field">
             <label htmlFor="email">{t('emailLabel')}</label>
             <input
@@ -77,6 +88,7 @@ export default function LoginPage() {
               name="email"
               type="email"
               autoComplete="email"
+              disabled={isLoading || registered}
               value={email}
               placeholder={t('emailPlaceholder')}
               aria-describedby={fieldErrors.email ? 'email-error' : undefined}
@@ -96,7 +108,9 @@ export default function LoginPage() {
               id="password"
               name="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
+              minLength={5}
+              disabled={isLoading}
               value={password}
               placeholder={t('passwordPlaceholder')}
               aria-describedby={fieldErrors.password ? 'password-error' : undefined}
@@ -111,10 +125,10 @@ export default function LoginPage() {
           </div>
 
           <button className="primary-button" type="submit" disabled={isLoading}>
-            {isLoading ? t('loading') : t('submit')}
+            {isLoading ? t('registerLoading') : registered ? t('retryLogin') : t('createAccount')}
           </button>
         </form>
-        <div className="landing-actions"><Link href={`/${locale}/register`}>{t('createAccount')}</Link></div>
+        <div className="landing-actions"><Link href={`/${locale}/login`}>{t('submit')}</Link></div>
       </section>
     </main>
   );
