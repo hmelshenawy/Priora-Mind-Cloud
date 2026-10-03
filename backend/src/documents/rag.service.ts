@@ -20,7 +20,7 @@ export class RagService {
                     source_id,
                     mindSpaceId,
                 }),
-                signal: AbortSignal.timeout(120000)
+                signal: AbortSignal.timeout(300000)
             },
             )
 
