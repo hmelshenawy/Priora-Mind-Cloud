@@ -75,8 +75,9 @@ class Memory:
     ]
 
         response = await asyncio.to_thread(self.llm.chat, messages, MemoryResponse.model_json_schema())
-
-        data = json.loads(response.message.content).get("memories", [])
+        response = self.response_normalize(response.message.content)
+        print("sdfsdfdsf",response)
+        data = response.memories
         await self.save(data)
         return data
 
@@ -100,16 +101,16 @@ class Memory:
         print("memory to save: ", memories)
 
         for memory in memories:
-            vector = await self.embed(memory["content"])
+            vector = await self.embed(memory.content)
             payload = {
-            "type": memory["type"],
-            "content": memory["content"],
-            "confidence": memory.get("confidence"),
+            "type": memory.type,
+            "content": memory.content,
+            "confidence": memory.confidence,
             "embedding": vector
         }
             response = await asyncio.to_thread(requests.post, url, json=payload, headers=headers)
             if response.status_code == 409:
-                print("Memory already exists, skipping:", memory["content"])
+                print("Memory already exists, skipping:", memory.content)
                 continue
 
             print("STATUS:", response.status_code)
@@ -140,3 +141,14 @@ class Memory:
         memories =await self.search(vector)
 
         return memories
+
+    def response_normalize(self, content):
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.removeprefix("```json")
+            content = content.removeprefix("```")
+            content = content.removesuffix("```")
+            content = content.strip()
+
+        result = MemoryResponse.model_validate_json(content)
+        return result
