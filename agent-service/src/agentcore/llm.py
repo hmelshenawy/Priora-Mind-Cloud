@@ -16,12 +16,13 @@ class OllamaClient(LlmClient):
         
 
 
-    def chat(self, messages: list):
+    def chat(self, messages: list, format = None):
         response =chat(
             model = self.model_name,
             messages=messages,
             tools= self.tools,
             think=False,
+            format= format
         )
         print("CONTENT:", repr(response.message.content))
         print("THINKING:", repr(response.message.thinking))

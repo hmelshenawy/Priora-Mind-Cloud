@@ -2,6 +2,8 @@ from agentcore.llm import LlmClient
 from agentcore.config import Configs
 import asyncio
 import json
+from pydantic import BaseModel
+from typing import Literal
 import requests
 from agentcore.context import access_token, mindSpaceId
 
@@ -46,6 +48,13 @@ Format:
 }
 """
 
+class MemoryItem(BaseModel):
+    type: Literal["FACT", "PREFERENCE", "GOAL", "DECISION"]
+    content: str
+    confidence: float
+
+class MemoryResponse(BaseModel):
+    memories: list[MemoryItem]
 
 class Memory:
     def __init__(self, llm: LlmClient):
@@ -65,7 +74,7 @@ class Memory:
         }
     ]
 
-        response = await asyncio.to_thread(self.llm.chat, messages)
+        response = await asyncio.to_thread(self.llm.chat, messages, MemoryResponse.model_json_schema())
 
         data = json.loads(response.message.content).get("memories", [])
         await self.save(data)
