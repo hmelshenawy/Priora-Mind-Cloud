@@ -7,7 +7,10 @@ import {createMindSpace, MindSpacesError, type MindSpace} from '@/lib/api/mindsp
 import {clearAuthState, getAuthState} from '@/lib/auth-state';
 import {clearSelectedMindSpaceId} from '@/lib/mindspace-selection';
 
-export function CreateMindSpace({onCreated}: {onCreated: (mindSpace: MindSpace) => void}) {
+export function CreateMindSpace({onCreated, onCancel}: {
+  onCreated: (mindSpace: MindSpace) => void;
+  onCancel?: () => void;
+}) {
   const t = useTranslations('onboarding');
   const locale = useLocale();
   const router = useRouter();
@@ -57,8 +60,8 @@ export function CreateMindSpace({onCreated}: {onCreated: (mindSpace: MindSpace) 
 
   return (
     <section aria-labelledby="onboarding-title">
-      <h2 id="onboarding-title">{t('title')}</h2>
-      <p>{t('description')}</p>
+      <h2 id="onboarding-title">{t(onCancel ? 'create' : 'title')}</h2>
+      <p>{t(onCancel ? 'additionalDescription' : 'description')}</p>
       {error ? <div className="form-error" role="alert">{error}</div> : null}
       <form onSubmit={handleSubmit} noValidate aria-busy={loading}>
         <div className="field">
@@ -71,6 +74,13 @@ export function CreateMindSpace({onCreated}: {onCreated: (mindSpace: MindSpace) 
         <button className="primary-button" type="submit" disabled={loading}>
           {loading ? t('creating') : t('create')}
         </button>
+        {onCancel ? (
+          <div className="landing-actions">
+            <button className="shell-button" type="button" disabled={loading} onClick={onCancel}>
+              {t('cancel')}
+            </button>
+          </div>
+        ) : null}
       </form>
     </section>
   );

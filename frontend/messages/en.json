@@ -143,6 +143,8 @@
     "nameRequired": "Enter a MindSpace name.",
     "create": "Create MindSpace",
     "creating": "Creating...",
-    "createError": "The MindSpace could not be created. Please try again."
+    "createError": "The MindSpace could not be created. Please try again.",
+    "additionalDescription": "Give your new MindSpace a name.",
+    "cancel": "Cancel"
   }
 }

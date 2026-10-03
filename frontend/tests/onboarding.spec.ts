@@ -4,7 +4,7 @@ const credentials = {email: 'new@example.com', password: 'abcde'};
 const auth = {accessToken: 'test-token', user: {id: 'user-1', email: credentials.email}};
 const space = {id: 'space-1', name: 'My MindSpace'};
 
-async function mockApi(page: Page, options: {registerStatus?: number; loginStatus?: number; createStatus?: number; network?: boolean} = {}) {
+async function mockApi(page: Page, options: {registerStatus?: number; loginStatus?: number; createStatus?: number; network?: boolean; existing?: typeof space[]} = {}) {
   const calls: {path: string; method: string; body: unknown; authorization?: string}[] = [];
   let created = false;
   await page.route('**/api/v1/**', async (route) => {
@@ -27,7 +27,8 @@ async function mockApi(page: Page, options: {registerStatus?: number; loginStatu
         created = status === 201;
         json = space;
       } else {
-        json = {count: created ? 1 : 0, result: created ? [space] : []};
+        const result = [...(options.existing ?? []), ...(created ? [space] : [])];
+        json = {count: result.length, result};
       }
     }
     await route.fulfill({status, json});
@@ -41,6 +42,33 @@ async function register(page: Page) {
   await page.getByLabel('Password', {exact: true}).fill(credentials.password);
   await page.getByRole('button', {name: 'Create account', exact: true}).click();
 }
+
+test('existing MindSpaces retain a create action and new creation preserves the list', async ({page}) => {
+  const options = {existing: [{id: 'personal', name: 'personal'}, {id: 'work', name: 'work'}], createStatus: 500};
+  const calls = await mockApi(page, options);
+  await page.addInitScript((value) => sessionStorage.setItem('priora.auth', JSON.stringify(value)), auth);
+  await page.goto('/en/app');
+  const create = page.getByRole('button', {name: 'Create MindSpace', exact: true});
+  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue('personal');
+  await create.click();
+  await page.getByRole('button', {name: 'Cancel', exact: true}).click();
+  await expect(page.getByLabel('MindSpace name')).toHaveCount(0);
+  await create.click();
+  await page.getByLabel('MindSpace name').fill(space.name);
+  await create.click();
+  await expect(page.getByRole('main').getByRole('alert')).toContainText('could not be created');
+  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue('personal');
+  options.createStatus = 201;
+  await create.click();
+  await expect(page.getByLabel('MindSpace name')).toHaveCount(0);
+  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue(space.id);
+  await expect(page.locator('#mindspace-selector option')).toHaveText(['personal', 'work', space.name]);
+  expect(await page.evaluate(() => sessionStorage.getItem('priora.selectedMindSpaceId'))).toBe(space.id);
+  expect(calls.filter(({path, method}) => path.endsWith('/mindspaces') && method === 'POST')).toHaveLength(2);
+  await page.reload();
+  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue(space.id);
+  await expect(create).toBeVisible();
+});
 
 test('registers, logs in, creates and persists the selected MindSpace, then enters chat', async ({page}) => {
   const calls = await mockApi(page);

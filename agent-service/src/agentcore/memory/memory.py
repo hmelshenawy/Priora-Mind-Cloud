@@ -53,6 +53,7 @@ class Memory:
 
 
     async def gather(self, user_message: str):
+        print("GATHERING MEMORIES!!")
         messages = [
         {
             "role": "system",
@@ -94,7 +95,7 @@ class Memory:
             payload = {
             "type": memory["type"],
             "content": memory["content"],
-            "confidence": memory["confidence"],
+            "confidence": memory.get("confidence"),
             "embedding": vector
         }
             response = await asyncio.to_thread(requests.post, url, json=payload, headers=headers)
@@ -125,6 +126,7 @@ class Memory:
         return response.json()
 
     async def retrieve (self, userMessage):
+        print("RETREIVE MEMORY")
         vector = await self.embed(userMessage)
         memories =await self.search(vector)
 

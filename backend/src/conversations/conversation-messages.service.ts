@@ -40,7 +40,7 @@ export class ConversationMessagesService {
 
     console.log("agnet reply:", agentReply)
 
-    
+    console.log("BEFORE SAVE")
     await this.prisma.message.createMany({
       data: [{
         conversationId,
@@ -55,7 +55,7 @@ export class ConversationMessagesService {
       },
     ],
     })
-
+    console.log("AFTER SAVE")
     return agentReply;
   }
 

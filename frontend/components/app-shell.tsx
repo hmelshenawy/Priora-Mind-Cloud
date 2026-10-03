@@ -20,11 +20,13 @@ type ShellStatus = 'loading' | 'success' | 'empty' | 'error';
 
 export function AppShell() {
   const t = useTranslations('appShell');
+  const onboarding = useTranslations('onboarding');
   const locale = useLocale();
   const router = useRouter();
   const [status, setStatus] = useState<ShellStatus>('loading');
   const [mindSpaces, setMindSpaces] = useState<MindSpace[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -87,6 +89,14 @@ export function AppShell() {
     saveSelectedMindSpaceId(mindSpaceId);
   }
 
+  function handleCreated(mindSpace: MindSpace) {
+    saveSelectedMindSpaceId(mindSpace.id);
+    setMindSpaces((current) => [...current.filter(({id}) => id !== mindSpace.id), mindSpace]);
+    setSelectedId(mindSpace.id);
+    setStatus('success');
+    setShowCreate(false);
+  }
+
   function handleLogout() {
     clearAuthState();
     clearSelectedMindSpaceId();
@@ -119,12 +129,7 @@ export function AppShell() {
           ) : null}
 
           {status === 'empty' ? (
-            <CreateMindSpace onCreated={(mindSpace) => {
-              saveSelectedMindSpaceId(mindSpace.id);
-              setMindSpaces([mindSpace]);
-              setSelectedId(mindSpace.id);
-              setStatus('success');
-            }} />
+            <CreateMindSpace onCreated={handleCreated} />
           ) : null}
 
           {status === 'error' ? (
@@ -148,7 +153,15 @@ export function AppShell() {
                   </option>
                 ))}
               </select>
+              {!showCreate ? (
+                <button className="shell-button" type="button" onClick={() => setShowCreate(true)}>
+                  {onboarding('create')}
+                </button>
+              ) : null}
             </div>
+          ) : null}
+          {status === 'success' && showCreate ? (
+            <CreateMindSpace onCreated={handleCreated} onCancel={() => setShowCreate(false)} />
           ) : null}
         </section>
         {status === 'success' && selectedId ? (

@@ -43,7 +43,7 @@ export async function listConversations(accessToken: string, mindSpaceId: string
   try {
     response = await fetch(
       `${API_BASE_URL}/conversations?mindSpaceId=${encodeURIComponent(mindSpaceId)}`,
-      {headers: {Authorization: `Bearer ${accessToken}`}},
+      { headers: { Authorization: `Bearer ${accessToken}` } },
     );
   } catch {
     throw new ConversationApiError('requestFailed');
@@ -55,7 +55,7 @@ export async function listConversations(accessToken: string, mindSpaceId: string
 
 export async function createConversation(
   accessToken: string,
-  input: {title: string; mindSpaceId: string},
+  input: { title: string; mindSpaceId: string },
 ) {
   let response: Response;
   try {
@@ -79,7 +79,7 @@ export async function listMessages(accessToken: string, conversationId: string) 
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/messages`, {
-      headers: {Authorization: `Bearer ${accessToken}`},
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
   } catch {
     throw new ConversationApiError('requestFailed');
@@ -92,7 +92,7 @@ export async function listMessages(accessToken: string, conversationId: string) 
 export async function sendMessage(
   accessToken: string,
   conversationId: string,
-  input: {content: string},
+  input: { content: string },
 ) {
   let response: Response;
   try {
@@ -108,6 +108,11 @@ export async function sendMessage(
     throw new ConversationApiError('requestFailed');
   }
 
-  if (!response.ok) throw errorFromStatus(response.status);
+  if (!response.ok) {
+    const body = await response.text();
+    console.error("SEND MESSAGE FAILED:", response.status, body);
+    throw errorFromStatus(response.status);
+  }
+
   return response.json() as Promise<AgentReply>;
 }
