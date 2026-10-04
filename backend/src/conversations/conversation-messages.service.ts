@@ -11,7 +11,7 @@ export class ConversationMessagesService {
     private readonly agent: AgentService,
   ) { }
 
-  async create(conversationId: string, dto: CreateMessageDto, userId: string, auth: string) {
+  async *create(conversationId: string, dto: CreateMessageDto, userId: string, auth: string) {
     const conversation = await this.prisma.conversation.findFirst({
       where: { id: conversationId, mindSpace: { userId } },
     });
@@ -35,12 +35,29 @@ export class ConversationMessagesService {
       accessToken: accessToken,
       mindSpaceId: mindSpaceId,
       sourceMessageId: sourceMessageId
-      
+
     })
 
     console.log("agnet reply:", agentReply)
 
-    console.log("BEFORE SAVE")
+    const reader = agentReply.getReader()
+    const decoder = new TextDecoder()
+
+    let fullReply = ''
+
+    while (true) {
+      const { value, done } = await reader.read()
+
+      if (done) break
+
+      const chunk = decoder.decode(value, { stream: true })
+      console.log("NEST CHUNK:", JSON.stringify(chunk))
+
+      fullReply += chunk
+
+      yield chunk
+    }
+
     await this.prisma.message.createMany({
       data: [{
         conversationId,
@@ -48,15 +65,15 @@ export class ConversationMessagesService {
         content: dto.content.trim(),
         createdAt: userCreatedAt
       },
-       {
+      {
         conversationId,
         role: MessageRole.ASSISTANT,
-        content: agentReply.content,
+        content: fullReply,
       },
-    ],
+      ],
     })
-    console.log("AFTER SAVE")
-    return agentReply;
+
+    
   }
 
   async findAll(conversationId: string, userId: string) {

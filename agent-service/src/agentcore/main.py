@@ -4,6 +4,7 @@ from agentcore.schemas import ChatRequest
 from agentcore.agent import Agent
 from agentcore.tools.tools import tools_registery, available_tools
 from agentcore.context import access_token, mindSpaceId
+from fastapi.responses import StreamingResponse 
 
 app = FastAPI(title="Priora AI Agent")
 agent = Agent(Configs.OLLAMA_MODEL_NAME, available_tools, tools_registery, 10)
@@ -21,11 +22,18 @@ async def chat(body: ChatRequest):
     history = body.history
     mindSpace = body.mindSpaceId
 
-    token_ctx = access_token.set(token)
-    mindSpace_ctx = mindSpaceId.set(mindSpace)
-    try:
-        response =await agent.run(message, history)
-        return response
-    finally:
-        access_token.reset(token_ctx)
-        mindSpaceId.reset(mindSpace_ctx)
+    
+    async def generate():
+        token_ctx = access_token.set(token)
+        mindSpace_ctx = mindSpaceId.set(mindSpace)
+        try:
+            async for chunk in agent.stream(message, history):
+                yield chunk
+        finally:
+            access_token.reset(token_ctx)
+            mindSpaceId.reset(mindSpace_ctx)
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/plain"
+    )

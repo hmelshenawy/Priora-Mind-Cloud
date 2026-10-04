@@ -57,7 +57,7 @@ class Agent:
         while step < self.steps:
             step+=1
             print("Step: ", step)
-            response =self.llm.chat(messages)
+            response =self.llm.chat(messages, tools=self.tools)
            
             if response.message.tool_calls:
                 messages.append(response.message)
@@ -72,6 +72,87 @@ class Agent:
                     return  messages[-1]
         return  messages[-1]
 
+
+    async def stream(self, user_message, history):
+        step = 0
+        messages = []
+
+        messages.append(system_prompt)
+        messages += history
+
+        memories = await self.search_memories(user_message)
+        if memories:
+            messages.append(memories)
+
+        messages.append({
+            "role": "user",
+            "content": user_message
+        })
+
+        asyncio.create_task(
+            self.memory.gather(user_message)
+        )
+
+        while step < self.steps:
+            step += 1
+            print("Step:", step)
+
+            response = self.llm.stream(messages, tools= self.tools)
+
+            tool_calls = []
+            tool_message = None
+            content = ""
+
+            for chunk in response:
+
+                # Collect tool calls
+                if chunk.message.tool_calls:
+                    tool_calls.extend(chunk.message.tool_calls)
+                    tool_message = chunk.message
+
+                # Collect + stream normal content
+                if chunk.message.content:
+                    content += chunk.message.content
+                    print(
+                        chunk.message.content,
+                        end="",
+                        flush=True
+                    )
+                    yield chunk.message.content
+
+            # LLM requested a tool
+            if tool_calls:
+                messages.append(tool_message)
+
+                for call in tool_calls:
+                    tool_name = call.function.name
+                    tool_args = call.function.arguments
+
+                    result = self.call_tool(
+                        name=tool_name,
+                        args=tool_args
+                    )
+
+                    print("TOOL RESULT:", result)
+
+                    messages.append({
+                        "role": "tool",
+                        "tool_name": tool_name,
+                        "content": str(result)
+                    })
+
+                # Run LLM again with tool result
+                continue
+
+            # No tool call = final answer
+            messages.append({
+                "role": "assistant",
+                "content": content
+            })
+
+            return 
+
+        return 
 
 
     async def search_memories(self, user_message):

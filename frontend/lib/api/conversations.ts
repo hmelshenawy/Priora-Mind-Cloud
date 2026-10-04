@@ -14,11 +14,6 @@ export type Message = {
   createdAt: string;
 };
 
-export type AgentReply = {
-  role: string;
-  content: string;
-};
-
 export type ConversationApiErrorCode = 'unauthorized' | 'notFound' | 'requestFailed';
 
 export class ConversationApiError extends Error {
@@ -96,7 +91,7 @@ export async function sendMessage(
 ) {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/messages`, {
+    response = await fetch(`/api/chat-stream/${encodeURIComponent(conversationId)}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -109,6 +104,7 @@ export async function sendMessage(
   }
 
   if (!response.ok) throw errorFromStatus(response.status);
+  if (!response.body) throw new ConversationApiError('requestFailed');
 
-  return response.json() as Promise<AgentReply>;
+  return response;
 }

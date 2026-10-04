@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Res, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { ConversationMessagesService } from './conversation-messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { JwtGuard } from 'src/auth/guards/jwt-guard';
+import type { Response } from 'express';
 
 
 @Controller('conversations')
@@ -13,15 +14,29 @@ export class ConversationsController {
   constructor(
     private readonly conversationsService: ConversationsService,
     private readonly conversationMessagesService: ConversationMessagesService,
-  ) {}
+  ) { }
 
   @Post(':id/messages')
-  createMessage(
+  async createMessage(
     @Param('id') conversationId: string,
     @Body() dto: CreateMessageDto,
     @Req() req: { user: { userId: string }, headers: { authorization: string } },
+    @Res() res: Response,
   ) {
-    return this.conversationMessagesService.create(conversationId, dto, req.user.userId, req.headers.authorization);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+
+    const stream = this.conversationMessagesService.create(
+      conversationId,
+      dto,
+      req.user.userId,
+      req.headers.authorization,
+    );
+
+    for await (const chunk of stream) {
+      res.write(chunk);
+    }
+
+    res.end();
   }
 
   @Get(':id/messages')
@@ -33,13 +48,14 @@ export class ConversationsController {
   }
 
   @Post()
-  create( @Body() createConversationDto: CreateConversationDto, @Req() req: any) {
+  create(@Body() createConversationDto: CreateConversationDto, @Req() req: any) {
     const userId = req.user.userId
     return this.conversationsService.create(createConversationDto, userId);
   }
 
   @Get()
-  findAll(@Query("mindSpaceId", ParseUUIDPipe) mindSpaceId: string, @Req() req: any) {
+  findAll(@Query() query: any, @Req() req: any) {
+    const mindSpaceId = query.mindSpaceId
     const userId = req.user.userId
     return this.conversationsService.findAll(mindSpaceId, userId);
   }

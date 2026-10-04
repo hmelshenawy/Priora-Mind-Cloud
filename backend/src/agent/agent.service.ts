@@ -40,13 +40,12 @@ export class AgentService {
         throw new Error('Agent request failed');
       }
 
-      const data = await response.json()
-      console.log(data)
-
-      if (!data?.content?.trim()) {
-        throw new Error('Agent returned an empty response');
+      if (!response.body) {
+        throw new Error('Agent returned an empty stream')
       }
-      return data
+
+      return response.body
+
 
     } catch (error) {
       if (error instanceof DOMException && error.name === 'TimeoutError') {

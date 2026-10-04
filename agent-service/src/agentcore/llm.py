@@ -6,6 +6,9 @@ class LlmClient(ABC):
     def chat(self, message):
         return
 
+    @abstractmethod
+    def stream(self, message):
+        return 
 # -----------------------
     
 class OllamaClient(LlmClient):
@@ -14,15 +17,25 @@ class OllamaClient(LlmClient):
         self.tools= tools
         self.tool_registry= tool_registry
         
+    def stream(self, messages:list, format = None, tools= None):
+        response = chat(stream = True,
+                        model = self.model_name,
+                        messages=messages,
+                        tools= tools,
+                        think=False,
+                        format = format
+                        )
+        return response
 
 
-    def chat(self, messages: list, format = None):
+    def chat(self, messages: list, format = None, tools = None):
         response =chat(
             model = self.model_name,
             messages=messages,
-            tools= self.tools,
+            tools= tools,
             think=False,
-            format= format
+            format= format,
+            
         )
         print("CONTENT:", repr(response.message.content))
         print("THINKING:", repr(response.message.thinking))
