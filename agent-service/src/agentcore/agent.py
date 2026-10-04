@@ -1,29 +1,33 @@
 from agentcore.llm import  OllamaClient
-from agentcore.config import Configs
+from agentcore.prompts.prompts import SYSTEM_PROMPT
 from agentcore.memory.memory import UserProfileMemory
 import asyncio
+from abc import ABC, abstractmethod
 
-system_prompt = {
-    "role": "system",
-    "content": (
-        """You are an AI agent.
+# -----------------------------------------------
+class BaseAgent(ABC):
+    def __init__(self):
+        super().__init__()
 
-        You have access to the user's uploaded documents and stored knowledge
-        through the searchKnowledge tool.
+    @abstractmethod
+    def run(self):
+        return
 
-        When the user asks a factual question about uploaded documents,
-        stored knowledge, files, PDFs, or the current MindSpace,
-        you MUST call searchKnowledge before answering.
+    @abstractmethod
+    def stream(self):
+        return
 
-        Do not say that you cannot access uploaded documents.
-        Use searchKnowledge instead.
+    @abstractmethod
+    def call_tools(self):
+        return
 
-        If searchKnowledge returns no useful result, then say that the information
-        was not found in the stored knowledge."""
-    )
-}
+    @abstractmethod
+    def search_memories(self):
+        return
 
-class Agent:
+
+# ---------------------------------------------
+class Agent(BaseAgent):
     def __init__(self, llm_model: str,   tools:list, tool_registry: list, steps: int = 10):
         self.token = ""
         self.tools = tools
@@ -42,7 +46,7 @@ class Agent:
     async def run(self, user_message, history):
         step=0
         messages = []
-        messages.append(system_prompt)
+        messages.append(SYSTEM_PROMPT)
         messages += history
 
         memories =await self.search_memories(user_message)
@@ -77,7 +81,7 @@ class Agent:
         step = 0
         messages = []
 
-        messages.append(system_prompt)
+        messages.append(SYSTEM_PROMPT)
         messages += history
 
         memories = await self.search_memories(user_message)
@@ -113,11 +117,6 @@ class Agent:
                 # Collect + stream normal content
                 if chunk.message.content:
                     content += chunk.message.content
-                    print(
-                        chunk.message.content,
-                        end="",
-                        flush=True
-                    )
                     yield chunk.message.content
 
             # LLM requested a tool

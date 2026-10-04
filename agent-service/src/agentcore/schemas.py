@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
+from typing import Literal
 
 
 class ChatRequest(BaseModel):
@@ -17,3 +18,12 @@ class AgentRequest(BaseModel):
 class TaskExecutor(str, Enum):
     user= "user"
     agent= "agent"
+
+
+class MemoryItem(BaseModel):
+    type: Literal["FACT", "PREFERENCE", "GOAL", "DECISION"]
+    content: str
+    confidence: float
+
+class MemoryResponse(BaseModel):
+    memories: list[MemoryItem]

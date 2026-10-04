@@ -16,6 +16,7 @@ class OllamaClient(LlmClient):
         self.model_name = model_name
         self.tools= tools
         self.tool_registry= tool_registry
+
         
     def stream(self, messages:list, format = None, tools= None):
         response = chat(stream = True,
@@ -23,8 +24,11 @@ class OllamaClient(LlmClient):
                         messages=messages,
                         tools= tools,
                         think=False,
-                        format = format
+                        format = format,
                         )
+        print("CONTENT:", repr(response.message.content))
+        print("THINKING:", repr(response.message.thinking))
+        print("TOOLS:", response.message.tool_calls)
         return response
 
 

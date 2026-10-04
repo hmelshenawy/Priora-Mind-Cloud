@@ -36,7 +36,7 @@ function NavLink({section, collapsed, onNavigate}: {
       aria-label={collapsed ? label : undefined}
       onClick={onNavigate}
       className={cn(
-        'flex min-h-11 items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-ring',
+        'flex min-h-11 items-center gap-3 rounded-2xl px-4 py-3 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-ring',
         collapsed ? 'justify-center px-2' : '',
         isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-muted',
       )}
@@ -87,12 +87,12 @@ export function WorkspaceSidebar({open, onOpenChange, showDesktop = true, collap
             data-sidebar-collapsed={collapsed ? 'true' : 'false'}
             className={cn(
               'hidden min-h-0 shrink-0 flex-col border-r border-border bg-card/90 p-5 transition-[width,padding] duration-200 ease-out lg:flex rtl:border-l rtl:border-r-0',
-              collapsed ? 'w-20 px-3' : 'w-64',
+              collapsed ? 'w-20 px-3' : 'w-52',
             )}
           >
             <div className={cn('mb-8 min-w-0', collapsed ? 'text-center' : '')}>
               <p className={cn('app-eyebrow', collapsed ? 'sr-only' : '')}>{t('eyebrow')}</p>
-              <p className={cn('mt-2 truncate text-xl font-extrabold', collapsed ? 'text-center text-base' : '')}>{collapsed ? 'PMC' : t('brand')}</p>
+              <p className={cn('mt-2 truncate text-lg font-bold', collapsed ? 'text-center text-base' : '')}>{collapsed ? 'PMC' : t('brand')}</p>
             </div>
             <NavLinks collapsed={collapsed} />
             <div className="mt-auto grid gap-2 border-t border-border pt-4">

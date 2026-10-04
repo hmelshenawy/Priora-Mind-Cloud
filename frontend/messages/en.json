@@ -150,7 +150,7 @@
     "conversationsLoading": "Loading conversations...",
     "conversationsEmpty": "No conversations in this MindSpace yet.",
     "conversationsError": "Conversations could not be loaded.",
-    "newConversationLabel": "Conversation title",
+    "newConversationLabel": "Title",
     "newConversationPlaceholder": "New conversation",
     "createConversation": "Create",
     "creatingConversation": "Creating...",
