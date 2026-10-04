@@ -19,6 +19,7 @@ class OllamaClient(LlmClient):
 
         
     def stream(self, messages:list, format = None, tools= None):
+        print("LLM CONTEXT: ", messages)
         response = chat(stream = True,
                         model = self.model_name,
                         messages=messages,
@@ -26,9 +27,7 @@ class OllamaClient(LlmClient):
                         think=False,
                         format = format,
                         )
-        print("CONTENT:", repr(response.message.content))
-        print("THINKING:", repr(response.message.thinking))
-        print("TOOLS:", response.message.tool_calls)
+
         return response
 
 

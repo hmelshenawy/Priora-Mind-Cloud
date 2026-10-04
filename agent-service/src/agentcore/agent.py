@@ -1,6 +1,7 @@
 from agentcore.llm import  OllamaClient
 from agentcore.prompts.prompts import SYSTEM_PROMPT
 from agentcore.memory.memory import UserProfileMemory
+from agentcore.skills.skill_loader import SkillLoader
 import asyncio
 from abc import ABC, abstractmethod
 
@@ -18,7 +19,7 @@ class BaseAgent(ABC):
         return
 
     @abstractmethod
-    def call_tools(self):
+    def call_tool(self):
         return
 
     @abstractmethod
@@ -28,12 +29,13 @@ class BaseAgent(ABC):
 
 # ---------------------------------------------
 class Agent(BaseAgent):
-    def __init__(self, llm_model: str,   tools:list, tool_registry: list, steps: int = 10):
+    def __init__(self, llm_model: str,   tools:list, tool_registry: list,skills: SkillLoader, steps: int = 10, ):
         self.token = ""
         self.tools = tools
         self.llm_model= llm_model
         self.tool_registry = tool_registry
         self.steps = steps
+        self.skills = skills
         self.llm = OllamaClient(
             model_name= self.llm_model,
             tool_registry= self.tool_registry,
@@ -47,6 +49,15 @@ class Agent(BaseAgent):
         step=0
         messages = []
         messages.append(SYSTEM_PROMPT)
+        messages.append({
+            "role": "system",
+            "content": f"""
+            Available skills:
+            {self.skills.list()}
+
+            Use a skill when its description matches the user's task.
+            """
+            })
         messages += history
 
         memories =await self.search_memories(user_message)
@@ -82,6 +93,17 @@ class Agent(BaseAgent):
         messages = []
 
         messages.append(SYSTEM_PROMPT)
+        messages.append(
+            {
+            "role": "system",
+            "content": f"""
+            Available skills:
+            {self.skills}
+
+            Use a skill when its description matches the user's task.
+            """
+            }
+        )
         messages += history
 
         memories = await self.search_memories(user_message)
