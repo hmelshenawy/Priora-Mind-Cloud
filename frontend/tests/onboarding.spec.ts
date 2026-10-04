@@ -43,31 +43,45 @@ async function register(page: Page) {
   await page.getByRole('button', {name: 'Create account', exact: true}).click();
 }
 
+function selectedMindSpace(page: Page) {
+  return page.getByRole('combobox', {name: 'Choose a MindSpace'});
+}
+
+function chatRouteHeading(page: Page) {
+  return page.getByRole('heading', {level: 1, name: 'Chat', exact: true});
+}
+
 test('existing MindSpaces retain a create action and new creation preserves the list', async ({page}) => {
   const options = {existing: [{id: 'personal', name: 'personal'}, {id: 'work', name: 'work'}], createStatus: 500};
   const calls = await mockApi(page, options);
   await page.addInitScript((value) => sessionStorage.setItem('priora.auth', JSON.stringify(value)), auth);
   await page.goto('/en/app');
-  const create = page.getByRole('button', {name: 'Create MindSpace', exact: true});
-  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue('personal');
-  await create.click();
+  await expect(page).toHaveURL(/\/en\/app\/chat$/);
+  const headerCreate = page.getByRole('banner').getByRole('button', {name: 'Create MindSpace', exact: true});
+  const formCreate = page.getByRole('main').getByRole('button', {name: 'Create MindSpace', exact: true});
+  await expect(selectedMindSpace(page)).toContainText('personal');
+  await headerCreate.click();
   await page.getByRole('button', {name: 'Cancel', exact: true}).click();
   await expect(page.getByLabel('MindSpace name')).toHaveCount(0);
-  await create.click();
+  await headerCreate.click();
   await page.getByLabel('MindSpace name').fill(space.name);
-  await create.click();
+  await formCreate.click();
   await expect(page.getByRole('main').getByRole('alert')).toContainText('could not be created');
-  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue('personal');
+  await expect(selectedMindSpace(page)).toContainText('personal');
   options.createStatus = 201;
-  await create.click();
+  await formCreate.click();
   await expect(page.getByLabel('MindSpace name')).toHaveCount(0);
-  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue(space.id);
-  await expect(page.locator('#mindspace-selector option')).toHaveText(['personal', 'work', space.name]);
+  await expect(selectedMindSpace(page)).toContainText(space.name);
+  await selectedMindSpace(page).click();
+  await expect(page.getByRole('option', {name: 'personal'})).toBeVisible();
+  await expect(page.getByRole('option', {name: 'work'})).toBeVisible();
+  await expect(page.getByRole('option', {name: space.name})).toBeVisible();
+  await page.keyboard.press('Escape');
   expect(await page.evaluate(() => sessionStorage.getItem('priora.selectedMindSpaceId'))).toBe(space.id);
   expect(calls.filter(({path, method}) => path.endsWith('/mindspaces') && method === 'POST')).toHaveLength(2);
   await page.reload();
-  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue(space.id);
-  await expect(create).toBeVisible();
+  await expect(selectedMindSpace(page)).toContainText(space.name);
+  await expect(headerCreate).toBeVisible();
 });
 
 test('registers, logs in, creates and persists the selected MindSpace, then enters chat', async ({page}) => {
@@ -89,11 +103,11 @@ test('registers, logs in, creates and persists the selected MindSpace, then ente
   expect(calls.filter(({method, path}) => method === 'POST' && path.endsWith('/mindspaces'))).toHaveLength(0);
   await page.getByLabel('MindSpace name').fill('  My MindSpace  ');
   await page.getByRole('button', {name: 'Create MindSpace', exact: true}).click();
-  await expect(page.getByRole('heading', {name: 'Chat', exact: true})).toBeVisible();
+  await expect(chatRouteHeading(page)).toBeVisible();
   expect(calls.find(({path, method}) => path.endsWith('/mindspaces') && method === 'POST')).toMatchObject({body: {name: space.name}, authorization: 'Bearer test-token'});
   expect(await page.evaluate(() => sessionStorage.getItem('priora.selectedMindSpaceId'))).toBe(space.id);
   await page.reload();
-  await expect(page.getByLabel('Choose a MindSpace')).toHaveValue(space.id);
+  await expect(selectedMindSpace(page)).toContainText(space.name);
 });
 
 test('invalid and missing registration input sends no requests', async ({page}) => {
@@ -142,7 +156,7 @@ test('MindSpace failure preserves input and permits retry', async ({page}) => {
   expect(await page.evaluate(() => sessionStorage.getItem('priora.selectedMindSpaceId'))).toBeNull();
   options.createStatus = 201;
   await page.getByRole('button', {name: 'Create MindSpace', exact: true}).click();
-  await expect(page.getByRole('heading', {name: 'Chat', exact: true})).toBeVisible();
+  await expect(chatRouteHeading(page)).toBeVisible();
 });
 
 test('network registration failure shows a recoverable error', async ({page}) => {
@@ -183,7 +197,7 @@ test('pending registration and creation disable submission and avoid duplicate r
   await page.getByRole('button', {name: 'Create MindSpace', exact: true}).click();
   await expect(page.getByRole('button', {name: 'Creating...', exact: true})).toBeDisabled();
   releaseCreation();
-  await expect(page.getByRole('heading', {name: 'Chat', exact: true})).toBeVisible();
+  await expect(chatRouteHeading(page)).toBeVisible();
   expect(calls.filter(({path}) => path.endsWith('/register'))).toHaveLength(1);
   expect(calls.filter(({path, method}) => path.endsWith('/mindspaces') && method === 'POST')).toHaveLength(1);
 });

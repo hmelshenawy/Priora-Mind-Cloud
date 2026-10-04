@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: priora-backend
+    env_file:
+      - ./backend/.env.docker
+    expose:
+      - "3000"
+    depends_on:
+      - agent
+      - rag
+
+  agent:
+    build:
+      context: ./agent-service
+    container_name: priora-agent
+    env_file:
+      - ./agent-service/.env.docker
+    networks:
+      - default
+      - n8n_default
+
+  rag:
+    build:
+      context: ./rag-service
+    container_name: priora-rag
+    env_file:
+      - ./rag-service/.env.docker
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEST_INTERNAL_API_BASE_URL: http://priora-backend:3000
+    environment:
+      NEST_INTERNAL_API_BASE_URL: http://priora-backend:3000
+    container_name: priora-frontend
+    ports:
+      - "127.0.0.1:3201:3000"
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_default"
+      - "traefik.http.routers.priora-mind.rule=Host(`mind.prioraflow.com`)"
+      - "traefik.http.routers.priora-mind.entrypoints=websecure"
+      - "traefik.http.routers.priora-mind.tls=true"
+      - "traefik.http.routers.priora-mind.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.priora-mind.loadbalancer.server.port=3000"
+    networks:
+      - default
+      - n8n_default
+networks:
+  n8n_default:
+    external: true

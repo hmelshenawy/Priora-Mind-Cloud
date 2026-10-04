@@ -36,7 +36,40 @@
     "errorDescription": "تحقق من الاتصال وحاول مرة أخرى.",
     "selectorLabel": "اختر مساحة",
     "currentLabel": "المساحة الحالية",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "navLabel": "تنقل مساحة العمل",
+    "menuOpen": "فتح تنقل مساحة العمل",
+    "menuClose": "إغلاق تنقل مساحة العمل",
+    "accountLabel": "إجراءات الحساب",
+    "sectionChat": "المحادثة",
+    "sectionDocuments": "المستندات",
+    "sectionTasks": "المهام",
+    "sectionNotes": "الملاحظات",
+    "sectionMemories": "الذاكرة",
+    "sectionSettings": "الإعدادات",
+    "collapseSidebar": "طي الشريط الجانبي",
+    "expandSidebar": "توسيع الشريط الجانبي"
+  },
+  "workspace": {
+    "conversationPanelOpen": "فتح المحادثات",
+    "conversationPanelClose": "إغلاق المحادثات"
+  },
+  "memories": {
+    "eyebrow": "قريباً",
+    "title": "الذاكرة",
+    "description": "أدوات الذاكرة غير متاحة بعد. هذا القسم محجوز لإصدار مستقبلي."
+  },
+  "settings": {
+    "eyebrow": "إعدادات مساحة العمل",
+    "title": "الإعدادات",
+    "description": "اختر طريقة ظهور Priora Mind Cloud على هذا الجهاز.",
+    "appearance": "المظهر",
+    "light": "فاتح",
+    "lightDescription": "استخدم مظهر مساحة العمل الفاتح والدافئ.",
+    "dark": "داكن",
+    "darkDescription": "استخدم مظهرًا داكنًا هادئًا لمساحة العمل.",
+    "system": "النظام",
+    "systemDescription": "اتبع مظهر نظام التشغيل."
   },
   "notes": {
     "title": "الملاحظات",

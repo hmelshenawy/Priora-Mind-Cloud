@@ -36,7 +36,40 @@
     "errorDescription": "Check your connection and try again.",
     "selectorLabel": "Choose a MindSpace",
     "currentLabel": "Current MindSpace",
-    "logout": "Log out"
+    "logout": "Log out",
+    "navLabel": "Workspace navigation",
+    "menuOpen": "Open workspace navigation",
+    "menuClose": "Close workspace navigation",
+    "accountLabel": "Account actions",
+    "sectionChat": "Chat",
+    "sectionDocuments": "Documents",
+    "sectionTasks": "Tasks",
+    "sectionNotes": "Notes",
+    "sectionMemories": "Memories",
+    "sectionSettings": "Settings",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
+  },
+  "workspace": {
+    "conversationPanelOpen": "Open conversations",
+    "conversationPanelClose": "Close conversations"
+  },
+  "memories": {
+    "eyebrow": "Coming soon",
+    "title": "Memories",
+    "description": "Memory tools are not available yet. This workspace section is reserved for a future release."
+  },
+  "settings": {
+    "eyebrow": "Workspace settings",
+    "title": "Settings",
+    "description": "Choose how Priora Mind Cloud appears on this device.",
+    "appearance": "Appearance",
+    "light": "Light",
+    "lightDescription": "Use the warm light workspace theme.",
+    "dark": "Dark",
+    "darkDescription": "Use a restrained dark workspace theme.",
+    "system": "System",
+    "systemDescription": "Follow your operating system appearance."
   },
   "notes": {
     "title": "Notes",

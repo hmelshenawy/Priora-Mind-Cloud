@@ -1,5 +1,6 @@
 from agentcore.llm import LlmClient
 from agentcore.config import Configs
+from abc import ABC, abstractmethod 
 import asyncio
 import json
 from pydantic import BaseModel
@@ -56,7 +57,38 @@ class MemoryItem(BaseModel):
 class MemoryResponse(BaseModel):
     memories: list[MemoryItem]
 
-class Memory:
+class Memory(ABC):
+    def __init__(self):
+        super().__init__()
+
+
+    @abstractmethod
+    def gather(self):
+        pass
+
+
+    @abstractmethod
+    def embed():
+        pass
+
+
+    @abstractmethod
+    def save():
+        pass
+
+
+    @abstractmethod
+    def search():
+        pass
+
+
+    @abstractmethod
+    def retrieve():
+        pass
+
+
+
+class UserProfileMemory(Memory):
     def __init__(self, llm: LlmClient):
         self.llm = llm
 
@@ -81,11 +113,13 @@ class Memory:
         await self.save(data)
         return data
 
+
     async def embed(self, text: str):
         url = f"{Configs.RAG_SERVICE_URL}"+"/v1/embed"
         vector = await asyncio.to_thread(requests.post ,url, json={"texts": [text]})
 
         return vector.json()["vectors"][0]
+
 
     async def save(self, memories):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory"
@@ -118,6 +152,7 @@ class Memory:
             print(response.json())
             response.raise_for_status()
 
+
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/search"
 
@@ -135,12 +170,14 @@ class Memory:
         
         return response.json()
 
+
     async def retrieve (self, userMessage):
         print("RETREIVE MEMORY")
         vector = await self.embed(userMessage)
         memories =await self.search(vector)
 
         return memories
+
 
     def response_normalize(self, content):
         content = content.strip()

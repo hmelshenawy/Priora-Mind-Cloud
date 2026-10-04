@@ -108,11 +108,7 @@ export async function sendMessage(
     throw new ConversationApiError('requestFailed');
   }
 
-  if (!response.ok) {
-    const body = await response.text();
-    console.error("SEND MESSAGE FAILED:", response.status, body);
-    throw errorFromStatus(response.status);
-  }
+  if (!response.ok) throw errorFromStatus(response.status);
 
   return response.json() as Promise<AgentReply>;
 }

@@ -1,8 +1,58 @@
+@import "tailwindcss";
+
 :root {
+  --background: 36 34% 94%;
+  --foreground: 210 24% 16%;
+  --card: 36 100% 97%;
+  --card-foreground: 210 24% 16%;
+  --primary: 210 24% 16%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 34 34% 92%;
+  --muted-foreground: 28 14% 39%;
+  --border: 34 27% 83%;
+  --destructive: 0 63% 39%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 210 24% 16%;
+  --workspace-surface: #f4f1ea;
+  --workspace-panel: #fffaf2;
+  --workspace-muted: #f3ede4;
+  --workspace-soft: #eee6da;
+  --workspace-strong: #1f2933;
+  --workspace-danger: #a42525;
+  --workspace-danger-soft: #fff0f0;
+  --workspace-glow: rgba(182, 137, 82, 0.18);
+  --workspace-shadow: rgba(31, 41, 51, 0.1);
   color-scheme: light;
   font-family: Arial, sans-serif;
   background: #f4f1ea;
   color: #1f2933;
+}
+
+html[data-theme='dark'] {
+  --background: 30 20% 10%;
+  --foreground: 36 34% 92%;
+  --card: 30 22% 14%;
+  --card-foreground: 36 34% 92%;
+  --primary: 34 55% 72%;
+  --primary-foreground: 30 22% 12%;
+  --muted: 30 18% 20%;
+  --muted-foreground: 36 18% 72%;
+  --border: 30 16% 28%;
+  --destructive: 0 54% 58%;
+  --destructive-foreground: 36 34% 96%;
+  --ring: 34 55% 72%;
+  --workspace-surface: #17110d;
+  --workspace-panel: #211813;
+  --workspace-muted: #30251e;
+  --workspace-soft: #392b22;
+  --workspace-strong: #f1dfc3;
+  --workspace-danger: #ff9b9b;
+  --workspace-danger-soft: #3b1b1b;
+  --workspace-glow: rgba(191, 137, 72, 0.16);
+  --workspace-shadow: rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+  background: var(--workspace-surface);
+  color: hsl(var(--foreground));
 }
 
 * {
@@ -123,8 +173,38 @@ a {
 .app-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(182, 137, 82, 0.18), transparent 35%),
-    #f4f1ea;
+    radial-gradient(circle at top left, var(--workspace-glow), transparent 35%),
+    var(--workspace-surface);
+  color: hsl(var(--foreground));
+}
+
+.workspace-shell {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.workspace-column {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.workspace-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.workspace-main > .chat {
+  height: 100%;
+  margin-top: 0;
 }
 
 .app-header {
@@ -149,7 +229,7 @@ a {
 }
 
 .app-eyebrow {
-  color: #766652;
+  color: hsl(var(--muted-foreground));
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -173,11 +253,11 @@ a {
 }
 
 .mindspace-panel {
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 24px;
-  background: #fffaf2;
+  background: hsl(var(--card));
   padding: clamp(24px, 5vw, 48px);
-  box-shadow: 0 24px 60px rgba(31, 41, 51, 0.1);
+  box-shadow: 0 24px 60px var(--workspace-shadow);
 }
 
 .panel-heading h1 {
@@ -208,7 +288,7 @@ a {
 .shell-state {
   max-width: 560px;
   border-radius: 16px;
-  background: #f3ede4;
+  background: hsl(var(--muted));
   padding: 20px;
 }
 
@@ -223,13 +303,13 @@ a {
 }
 
 .shell-error {
-  background: #fff0f0;
-  color: #842323;
+  background: var(--workspace-danger-soft);
+  color: var(--workspace-danger);
 }
 
 .chat {
   display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.8fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 20px;
   margin-top: 24px;
 }
@@ -237,15 +317,49 @@ a {
 .conversation-pane,
 .message-pane {
   min-width: 0;
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 20px;
-  background: #fffaf2;
-  padding: 24px;
+  background: hsl(var(--card));
+  padding: 16px;
 }
 
 .conversation-pane h2,
 .message-pane h2 {
   margin: 0 0 20px;
+}
+
+.message-pane > .flex {
+  margin-bottom: 20px;
+}
+
+.message-pane > .flex h2 {
+  margin: 0;
+}
+
+.auto-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.auto-scrollbar:hover {
+  scrollbar-color: #aaa transparent;
+}
+
+.auto-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.auto-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.auto-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.auto-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: #aaa;
 }
 
 .conversation-form,
@@ -267,24 +381,26 @@ a {
 .inline-form input,
 .composer textarea {
   width: 100%;
-  border: 1px solid #c9c0b2;
+  border: 1px solid hsl(var(--border));
   border-radius: 12px;
-  background: #ffffff;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   padding: 11px 13px;
   font: inherit;
 }
 
 .composer textarea {
-  min-height: 110px;
-  resize: vertical;
+  min-height: 60px;
+  max-height: 180px;
+  resize: none;
 }
 
 .inline-form button,
 .composer button {
   border: 0;
   border-radius: 12px;
-  background: #1f2933;
-  color: #ffffff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   cursor: pointer;
   padding: 11px 16px;
   font-weight: 700;
@@ -312,16 +428,16 @@ a {
   width: 100%;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: #f3ede4;
-  color: #1f2933;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
   cursor: pointer;
   padding: 11px 13px;
   text-align: start;
 }
 
 .conversation-list button.active {
-  border-color: #1f2933;
-  background: #e5dacb;
+  border-color: hsl(var(--primary));
+  background: var(--workspace-soft);
   font-weight: 700;
 }
 
@@ -350,18 +466,59 @@ a {
 
 .user-message {
   justify-self: end;
-  background: #1f2933;
-  color: #ffffff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
 .assistant-message {
   justify-self: start;
-  background: #eee6da;
+  background: var(--workspace-soft);
 }
 
 .chat-error {
   margin: 4px 0 0;
-  color: #a42525;
+  color: var(--workspace-danger);
+}
+
+.settings-panel {
+  display: grid;
+  gap: 20px;
+  max-width: 840px;
+}
+
+.settings-heading,
+.settings-card {
+  border: 1px solid hsl(var(--border));
+  border-radius: 24px;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  padding: clamp(20px, 4vw, 32px);
+  box-shadow: 0 24px 60px var(--workspace-shadow);
+}
+
+.settings-heading h2 {
+  margin: 8px 0;
+  font-size: clamp(28px, 5vw, 44px);
+  line-height: 1;
+}
+
+.settings-heading p,
+.settings-card legend {
+  margin: 0;
+}
+
+.settings-heading p:not(.app-eyebrow) {
+  color: hsl(var(--muted-foreground));
+}
+
+.settings-card {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-card legend {
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .notes {
@@ -848,3 +1005,4 @@ a {
     gap: 4px;
   }
 }
+

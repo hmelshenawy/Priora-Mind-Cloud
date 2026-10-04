@@ -1,5 +1,6 @@
 'use client';
 
+import type {ReactNode} from 'react';
 import {useEffect, useState} from 'react';
 import {useLocale, useTranslations} from 'next-intl';
 import {useRouter} from 'next/navigation';
@@ -10,15 +11,15 @@ import {
   getSelectedMindSpaceId,
   saveSelectedMindSpaceId,
 } from '@/lib/mindspace-selection';
-import {Chat} from '@/components/chat';
-import {Documents} from '@/components/documents';
-import {Notes} from '@/components/notes';
-import {Tasks} from '@/components/tasks';
 import {CreateMindSpace} from '@/components/create-mindspace';
+import {WorkspaceMindSpaceProvider} from '@/components/workspace-context';
+import {WorkspaceHeader} from '@/components/workspace-header';
+import {WorkspaceSidebar} from '@/components/workspace-sidebar';
 
 type ShellStatus = 'loading' | 'success' | 'empty' | 'error';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'priora.sidebar.collapsed';
 
-export function AppShell() {
+export function AppShell({children}: {children: ReactNode}) {
   const t = useTranslations('appShell');
   const onboarding = useTranslations('onboarding');
   const locale = useLocale();
@@ -27,6 +28,12 @@ export function AppShell() {
   const [mindSpaces, setMindSpaces] = useState<MindSpace[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [workspaceNavOpen, setWorkspaceNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    setSidebarCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === 'true');
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -83,6 +90,7 @@ export function AppShell() {
   }, [locale, router]);
 
   const selectedMindSpace = mindSpaces.find(({id}) => id === selectedId);
+  const userEmail = getAuthState()?.user.email;
 
   function handleSelection(mindSpaceId: string) {
     setSelectedId(mindSpaceId);
@@ -103,25 +111,31 @@ export function AppShell() {
     router.replace(`/${locale}/login`);
   }
 
+  function handleSidebarCollapsedChange(collapsed: boolean) {
+    setSidebarCollapsed(collapsed);
+    localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(collapsed));
+  }
+
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="app-eyebrow">{t('eyebrow')}</p>
-          <p className="app-brand">{t('brand')}</p>
-        </div>
-        <button className="shell-button" type="button" onClick={handleLogout}>
-          {t('logout')}
-        </button>
-      </header>
+    <div className="app-shell workspace-shell">
+      <WorkspaceSidebar
+        open={workspaceNavOpen}
+        onOpenChange={setWorkspaceNavOpen}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={handleSidebarCollapsedChange}
+      />
+      <div className="workspace-column">
+        <WorkspaceHeader
+          userEmail={userEmail}
+          mindSpaces={mindSpaces}
+          selectedId={selectedId}
+          onSelectMindSpace={handleSelection}
+          onCreateMindSpace={() => setShowCreate(true)}
+          onLogout={handleLogout}
+          menu={<WorkspaceSidebar open={workspaceNavOpen} onOpenChange={setWorkspaceNavOpen} showDesktop={false} />}
+        />
 
-      <main className="app-main">
-        <section className="mindspace-panel" aria-labelledby="mindspace-title">
-          <div className="panel-heading">
-            <p className="app-eyebrow">{t('currentLabel')}</p>
-            <h1 id="mindspace-title">{selectedMindSpace?.name ?? t('title')}</h1>
-          </div>
-
+        <main className="workspace-main" tabIndex={-1}>
           {status === 'loading' ? (
             <p className="shell-state" aria-live="polite">
               {t('loading')}
@@ -129,7 +143,9 @@ export function AppShell() {
           ) : null}
 
           {status === 'empty' ? (
-            <CreateMindSpace onCreated={handleCreated} />
+            <section className="mindspace-panel" aria-labelledby="mindspace-title">
+              <CreateMindSpace onCreated={handleCreated} />
+            </section>
           ) : null}
 
           {status === 'error' ? (
@@ -139,40 +155,19 @@ export function AppShell() {
             </div>
           ) : null}
 
-          {status === 'success' && selectedId ? (
-            <div className="mindspace-control">
-              <label htmlFor="mindspace-selector">{t('selectorLabel')}</label>
-              <select
-                id="mindspace-selector"
-                value={selectedId}
-                onChange={(event) => handleSelection(event.target.value)}
-              >
-                {mindSpaces.map((mindSpace) => (
-                  <option key={mindSpace.id} value={mindSpace.id}>
-                    {mindSpace.name}
-                  </option>
-                ))}
-              </select>
-              {!showCreate ? (
-                <button className="shell-button" type="button" onClick={() => setShowCreate(true)}>
-                  {onboarding('create')}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
           {status === 'success' && showCreate ? (
-            <CreateMindSpace onCreated={handleCreated} onCancel={() => setShowCreate(false)} />
+            <section className="mindspace-panel" aria-labelledby="mindspace-title">
+              <p className="app-eyebrow">{t('currentLabel')}</p>
+              <h2 id="mindspace-title">{selectedMindSpace?.name ?? t('title')}</h2>
+              <CreateMindSpace onCreated={handleCreated} onCancel={() => setShowCreate(false)} />
+            </section>
           ) : null}
-        </section>
-        {status === 'success' && selectedId ? (
-          <>
-            <Documents key={`documents-${selectedId}`} mindSpaceId={selectedId} />
-            <Chat mindSpaceId={selectedId} />
-            <Notes key={`notes-${selectedId}`} mindSpaceId={selectedId} />
-            <Tasks key={`tasks-${selectedId}`} mindSpaceId={selectedId} />
-          </>
-        ) : null}
-      </main>
+
+          {status === 'success' && selectedId && !showCreate ? (
+            <WorkspaceMindSpaceProvider mindSpaceId={selectedId}>{children}</WorkspaceMindSpaceProvider>
+          ) : null}
+        </main>
+      </div>
     </div>
   );
 }

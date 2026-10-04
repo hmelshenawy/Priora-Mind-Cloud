@@ -1,6 +1,6 @@
 from agentcore.llm import  OllamaClient
 from agentcore.config import Configs
-from agentcore.memory.memory import Memory
+from agentcore.memory.memory import UserProfileMemory
 import asyncio
 
 system_prompt = {
@@ -36,7 +36,7 @@ class Agent:
             tools= self.tools,
             
         )
-        self.memory = Memory(self.llm)
+        self.memory = UserProfileMemory(self.llm)
 
 
     async def run(self, user_message, history):
@@ -50,10 +50,8 @@ class Agent:
             messages.append(memories)
 
         messages.append({"role": "user", "content": user_message})
-
         print("all history:", messages)
 
-        
         asyncio.create_task(self.memory.gather(user_message))        
 
         while step < self.steps:
@@ -61,16 +59,13 @@ class Agent:
             print("Step: ", step)
             response =self.llm.chat(messages)
            
-
             if response.message.tool_calls:
                 messages.append(response.message)
+                
                 for call in response.message.tool_calls:
                     tool_name = call.function.name
                     tool_args = call.function.arguments
-
-                    
                     result = self.call_tool(name=tool_name, args=tool_args)
-
                     messages.append( {"role": "tool", "tool_name": tool_name, "content": str(result) })
             else:
                     messages.append({"role": "assistant", "content": str(response.message.content)})
