@@ -536,7 +536,7 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
             {t('composerLabel')}
           </label>
 
-          <div className="relative rounded-2xl border bg-background auto-scrollbar">
+          <div className="relative rounded-2xl border border-input bg-background auto-scrollbar">
             <textarea
               id="message-content"
               className="min-h-12 max-h-32 w-full resize-none bg-transparent px-4 py-3 pr-14 outline-none"

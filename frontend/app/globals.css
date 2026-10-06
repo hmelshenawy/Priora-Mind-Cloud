@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 
 :root {
   --background: 36 34% 94%;
@@ -13,6 +14,14 @@
   --destructive: 0 63% 39%;
   --destructive-foreground: 0 0% 100%;
   --ring: 210 24% 16%;
+  --input: 37 18% 74%;
+  --surface-raised: #ffffff;
+  --text-secondary: #5c6670;
+  --text-description: #46515b;
+  --text-metadata: #766652;
+  --surface-selected: #e5dacb;
+  --success: #24613d;
+  --public-shadow: rgba(31, 41, 51, 0.12);
   --workspace-surface: #f4f1ea;
   --workspace-panel: #fffaf2;
   --workspace-muted: #f3ede4;
@@ -24,8 +33,8 @@
   --workspace-shadow: rgba(31, 41, 51, 0.1);
   color-scheme: light;
   font-family: Arial, sans-serif;
-  background: #f4f1ea;
-  color: #1f2933;
+  background: var(--workspace-surface);
+  color: hsl(var(--foreground));
 }
 
 html[data-theme='dark'] {
@@ -39,8 +48,16 @@ html[data-theme='dark'] {
   --muted-foreground: 36 18% 72%;
   --border: 30 16% 28%;
   --destructive: 0 54% 58%;
-  --destructive-foreground: 36 34% 96%;
+  --destructive-foreground: 30 22% 10%;
   --ring: 34 55% 72%;
+  --input: 30 16% 40%;
+  --surface-raised: hsl(var(--background));
+  --text-secondary: hsl(var(--muted-foreground));
+  --text-description: hsl(var(--foreground));
+  --text-metadata: hsl(var(--muted-foreground));
+  --surface-selected: var(--workspace-soft);
+  --success: #8bd5a6;
+  --public-shadow: var(--workspace-shadow);
   --workspace-surface: #17110d;
   --workspace-panel: #211813;
   --workspace-muted: #30251e;
@@ -62,7 +79,7 @@ html[data-theme='dark'] {
 body {
   margin: 0;
   min-height: 100vh;
-  background: #f4f1ea;
+  background: var(--workspace-surface);
 }
 
 button,
@@ -71,8 +88,10 @@ textarea {
   font: inherit;
 }
 
-a {
-  color: inherit;
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 .auth-page {
@@ -84,11 +103,11 @@ a {
 
 .auth-card {
   width: min(100%, 420px);
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 20px;
-  background: #fffaf2;
+  background: var(--workspace-panel);
   padding: 32px;
-  box-shadow: 0 24px 60px rgba(31, 41, 51, 0.12);
+  box-shadow: 0 24px 60px var(--public-shadow);
 }
 
 .auth-card h1 {
@@ -98,7 +117,10 @@ a {
 
 .auth-card p {
   margin: 0 0 24px;
-  color: #5c6670;
+}
+
+.auth-card p:not(.field-error):not(.form-error) {
+  color: var(--text-secondary);
 }
 
 .field {
@@ -113,15 +135,16 @@ a {
 
 .field input {
   width: 100%;
-  border: 1px solid #c9c0b2;
+  border: 1px solid hsl(var(--input));
   border-radius: 12px;
   padding: 12px 14px;
-  background: #ffffff;
+  background: var(--surface-raised);
+  color: hsl(var(--foreground));
 }
 
 .field-error,
 .form-error {
-  color: #a42525;
+  color: var(--workspace-danger);
 }
 
 .field-error {
@@ -131,7 +154,7 @@ a {
 .form-error {
   margin-bottom: 16px;
   border-radius: 12px;
-  background: #fff0f0;
+  background: var(--workspace-danger-soft);
   padding: 12px;
 }
 
@@ -139,8 +162,8 @@ a {
   width: 100%;
   border: 0;
   border-radius: 999px;
-  background: #1f2933;
-  color: #ffffff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   cursor: pointer;
   padding: 13px 18px;
   font-weight: 700;
@@ -161,9 +184,9 @@ a {
 .landing-card {
   width: min(100%, 680px);
   border-radius: 24px;
-  background: #fffaf2;
+  background: var(--workspace-panel);
   padding: 32px;
-  box-shadow: 0 24px 60px rgba(31, 41, 51, 0.12);
+  box-shadow: 0 24px 60px var(--public-shadow);
 }
 
 .landing-actions {
@@ -212,8 +235,8 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  border-bottom: 1px solid #ded6c8;
-  background: rgba(255, 250, 242, 0.9);
+  border-bottom: 1px solid hsl(var(--border));
+  background: color-mix(in srgb, var(--workspace-panel) 90%, transparent);
   padding: 20px clamp(20px, 5vw, 64px);
 }
 
@@ -237,10 +260,10 @@ a {
 }
 
 .shell-button {
-  border: 1px solid #1f2933;
+  border: 1px solid hsl(var(--foreground));
   border-radius: 999px;
   background: transparent;
-  color: #1f2933;
+  color: hsl(var(--foreground));
   cursor: pointer;
   padding: 10px 18px;
   font-weight: 700;
@@ -278,9 +301,10 @@ a {
 
 .mindspace-control select {
   width: 100%;
-  border: 1px solid #c9c0b2;
+  border: 1px solid hsl(var(--input));
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface-raised);
+  color: hsl(var(--foreground));
   padding: 12px 14px;
   font: inherit;
 }
@@ -342,7 +366,7 @@ a {
 }
 
 .auto-scrollbar:hover {
-  scrollbar-color: #aaa transparent;
+  scrollbar-color: hsl(var(--muted-foreground)) transparent;
 }
 
 .auto-scrollbar::-webkit-scrollbar {
@@ -359,7 +383,7 @@ a {
 }
 
 .auto-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: #aaa;
+  background: hsl(var(--muted-foreground));
 }
 
 .conversation-form,
@@ -531,9 +555,9 @@ a {
 .notes-sidebar,
 .note-reader {
   min-width: 0;
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 20px;
-  background: #fffaf2;
+  background: var(--workspace-panel);
   padding: 24px;
 }
 
@@ -546,7 +570,7 @@ a {
 .note-form {
   display: grid;
   gap: 8px;
-  border-block: 1px solid #ded6c8;
+  border-block: 1px solid hsl(var(--border));
   padding-block: 20px;
 }
 
@@ -557,9 +581,10 @@ a {
 .note-form input,
 .note-form textarea {
   width: 100%;
-  border: 1px solid #c9c0b2;
+  border: 1px solid hsl(var(--input));
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface-raised);
+  color: hsl(var(--foreground));
   padding: 11px 13px;
 }
 
@@ -571,8 +596,8 @@ a {
 .note-form button {
   border: 0;
   border-radius: 12px;
-  background: #1f2933;
-  color: #ffffff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   cursor: pointer;
   padding: 11px 16px;
   font-weight: 700;
@@ -600,16 +625,16 @@ a {
   overflow-wrap: anywhere;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: #f3ede4;
-  color: #1f2933;
+  background: var(--workspace-muted);
+  color: hsl(var(--foreground));
   cursor: pointer;
   padding: 11px 13px;
   text-align: start;
 }
 
 .notes-list button.active {
-  border-color: #1f2933;
-  background: #e5dacb;
+  border-color: hsl(var(--foreground));
+  background: var(--surface-selected);
   font-weight: 700;
 }
 
@@ -625,7 +650,7 @@ a {
 
 .notes-error {
   margin: 4px 0 0;
-  color: #a42525;
+  color: var(--workspace-danger);
 }
 
 .documents {
@@ -633,9 +658,9 @@ a {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 20px;
   margin-top: 24px;
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 20px;
-  background: #fffaf2;
+  background: var(--workspace-panel);
   padding: 24px;
 }
 
@@ -652,14 +677,14 @@ a {
 
 .documents-heading p {
   margin-bottom: 0;
-  color: #5c6670;
+  color: var(--text-secondary);
 }
 
 .document-upload,
 .documents-list-panel {
   min-width: 0;
   border-radius: 16px;
-  background: #f3ede4;
+  background: var(--workspace-muted);
   padding: 20px;
 }
 
@@ -676,17 +701,18 @@ a {
 .document-upload input {
   width: 100%;
   min-width: 0;
-  border: 1px solid #c9c0b2;
+  border: 1px solid hsl(var(--input));
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface-raised);
+  color: hsl(var(--foreground));
   padding: 10px;
 }
 
 .document-upload button {
   border: 0;
   border-radius: 12px;
-  background: #1f2933;
-  color: #ffffff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   cursor: pointer;
   padding: 11px 16px;
   font-weight: 700;
@@ -706,16 +732,16 @@ a {
 }
 
 .document-hint {
-  color: #5c6670;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .documents-error {
-  color: #a42525;
+  color: var(--workspace-danger);
 }
 
 .documents-success {
-  color: #24613d;
+  color: var(--success);
 }
 
 .documents-list {
@@ -728,9 +754,10 @@ a {
 
 .documents-list li {
   min-width: 0;
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface-raised);
+  color: hsl(var(--foreground));
   padding: 12px 14px;
   text-align: start;
 }
@@ -746,9 +773,9 @@ a {
 
 .tasks {
   margin-top: 24px;
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 20px;
-  background: #fffaf2;
+  background: var(--workspace-panel);
   padding: 24px;
 }
 
@@ -767,7 +794,7 @@ a {
 
 .tasks-heading p {
   margin-bottom: 20px;
-  color: #5c6670;
+  color: var(--text-secondary);
 }
 
 .tasks-list-status p,
@@ -776,19 +803,19 @@ a {
 }
 
 .tasks-error {
-  color: #a42525;
+  color: var(--workspace-danger);
 }
 
 .tasks-success {
-  color: #24613d;
+  color: var(--success);
 }
 
 .tasks-create-toggle,
 .task-form button {
   border: 0;
   border-radius: 12px;
-  background: #1f2933;
-  color: #ffffff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   cursor: pointer;
   padding: 11px 16px;
   font-weight: 700;
@@ -803,7 +830,7 @@ a {
   gap: 8px;
   margin-bottom: 20px;
   border-radius: 16px;
-  background: #f3ede4;
+  background: var(--workspace-muted);
   padding: 20px;
 }
 
@@ -816,9 +843,10 @@ a {
 .task-form select {
   width: 100%;
   min-width: 0;
-  border: 1px solid #c9c0b2;
+  border: 1px solid hsl(var(--input));
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface-raised);
+  color: hsl(var(--foreground));
   padding: 11px 13px;
   font: inherit;
 }
@@ -836,9 +864,9 @@ a {
 }
 
 .task-form .task-cancel {
-  border: 1px solid #1f2933;
+  border: 1px solid hsl(var(--foreground));
   background: transparent;
-  color: #1f2933;
+  color: hsl(var(--foreground));
 }
 
 .task-form button:disabled,
@@ -871,9 +899,10 @@ a {
 
 .tasks-list li {
   min-width: 0;
-  border: 1px solid #ded6c8;
+  border: 1px solid hsl(var(--border));
   border-radius: 16px;
-  background: #ffffff;
+  background: var(--surface-raised);
+  color: hsl(var(--foreground));
   padding: 18px;
   text-align: start;
 }
@@ -890,7 +919,7 @@ a {
 
 .task-description {
   margin: 10px 0 0;
-  color: #46515b;
+  color: var(--text-description);
   white-space: pre-wrap;
 }
 
@@ -908,7 +937,7 @@ a {
 }
 
 .task-metadata dt {
-  color: #766652;
+  color: var(--text-metadata);
   font-weight: 700;
 }
 
@@ -1006,3 +1035,63 @@ a {
   }
 }
 
+/* Native controls are shared by auth, onboarding, and the legacy feature forms. */
+input,
+textarea,
+select {
+  accent-color: hsl(var(--primary));
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: hsl(var(--muted-foreground));
+  opacity: 1;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+input[aria-invalid='true'],
+textarea[aria-invalid='true'],
+select[aria-invalid='true'] {
+  border-color: var(--workspace-danger);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.primary-button:focus-visible,
+.shell-button:focus-visible,
+.note-form button:focus-visible,
+.document-upload button:focus-visible,
+.task-form button:focus-visible,
+.tasks-create-toggle:focus-visible,
+.conversation-list button:focus-visible,
+.notes-list button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.primary-button:enabled:hover,
+.note-form button:enabled:hover,
+.document-upload button:enabled:hover,
+.tasks-create-toggle:enabled:hover,
+.task-form button:not(.task-cancel):enabled:hover {
+  background: hsl(var(--primary) / 0.9);
+}
+
+.shell-button:enabled:hover,
+.task-form .task-cancel:enabled:hover,
+.conversation-list button:enabled:hover,
+.notes-list button:enabled:hover {
+  background: var(--workspace-soft);
+}
+
+.shell-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}

@@ -52,7 +52,6 @@ export function ThemeProvider({children}: {children: ReactNode}) {
       setResolvedTheme(nextResolved);
       applyTheme('system', nextResolved);
     }
-    handleChange();
     query.addEventListener('change', handleChange);
     return () => query.removeEventListener('change', handleChange);
   }, [preference]);

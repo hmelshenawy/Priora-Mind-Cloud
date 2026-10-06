@@ -18,6 +18,7 @@ const config: Config = {
         muted: 'hsl(var(--muted))',
         'muted-foreground': 'hsl(var(--muted-foreground))',
         border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
         destructive: 'hsl(var(--destructive))',
         'destructive-foreground': 'hsl(var(--destructive-foreground))',
         ring: 'hsl(var(--ring))',
