@@ -34,7 +34,7 @@ def createTask(title: str,
     return {"response":response.json()}
 
 
-available_tools.append(createTask)
+# available_tools.append(createTask)
 tools_registery[createTask.__name__] = createTask
 
 
@@ -46,9 +46,7 @@ create_task_tool = {
         "parameters": {
             "type": "object",
             "properties": {
-                "mindSpaceId": {
-                    "type": "string"
-                },
+                
                 "title": {
                     "type": "string"
                 },
@@ -61,7 +59,6 @@ create_task_tool = {
                 }
             },
             "required": [
-                "mindSpaceId",
                 "title",
                 "description",
                 "executor"
