@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 from typing import Literal
+from datetime import datetime
 
 
 class ChatRequest(BaseModel):
@@ -20,6 +21,7 @@ class TaskExecutor(str, Enum):
     agent= "agent"
 
 
+# -------------------------------------------
 class MemoryItem(BaseModel):
     type: Literal["FACT", "PREFERENCE", "GOAL", "DECISION"]
     content: str
@@ -27,3 +29,21 @@ class MemoryItem(BaseModel):
 
 class MemoryResponse(BaseModel):
     memories: list[MemoryItem]
+
+
+
+# --------------------------------------------
+class EventItem(BaseModel):
+    summary: str
+    occurredAt: datetime | None = None
+    entities: list
+    participants: list
+    concepts: list
+    salience: float  | None = None
+    embedding: list[float] | None = None
+
+class SalienceResponse(BaseModel):
+    scores: list[float] 
+
+class EventResponse(BaseModel):
+    events: list[EventItem]

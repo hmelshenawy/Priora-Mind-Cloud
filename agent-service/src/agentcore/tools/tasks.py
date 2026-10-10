@@ -42,7 +42,10 @@ create_task_tool = {
     "type": "function",
     "function": {
         "name": "createTask",
-        "description": "Create a new task",
+        "description": """Create a new task Before calling this tool, make sure title, description, and executor are known.
+                        Use conversation context to infer them when they are clear.
+                        If any required value cannot be reliably inferred, ask the user for it
+                        instead of calling this tool.""",
         "parameters": {
             "type": "object",
             "properties": {

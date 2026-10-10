@@ -6,6 +6,7 @@
   - Made the column `mindSpaceId` on table `Memory` required. This step will fail if there are existing NULL values in that column.
 
 */
+
 -- DropForeignKey
 ALTER TABLE "Memory" DROP CONSTRAINT "Memory_sourceMessageId_fkey";
 

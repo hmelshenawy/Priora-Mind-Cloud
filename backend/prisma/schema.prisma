@@ -43,6 +43,7 @@ model User {
   updatedAt    DateTime    @updatedAt
   mindSpaces   MindSpace[]
   memories     Memory[]
+  events       Event[]
 }
 
 model MindSpace {
@@ -59,6 +60,7 @@ model MindSpace {
   tasks         Task[]
   documents     Document[]
   memories      Memory[]
+  events         Event[]
 
   @@index([userId])
 }
@@ -165,4 +167,29 @@ model Memory {
   @@index([userId])
   @@index([mindSpaceId])
   @@index([userId, mindSpaceId])
+}
+
+
+model Event {
+  id           String   @id @default(uuid())
+  userId       String
+  mindSpaceId  String
+
+  summary      String
+  occurredAt   DateTime?
+  entities     Json
+  participants Json
+  concepts     Json
+  salience     Float
+
+  embedding    Unsupported("vector(1024)")
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mindSpace MindSpace @relation(fields: [mindSpaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, mindSpaceId])
+  @@index([occurredAt])
 }

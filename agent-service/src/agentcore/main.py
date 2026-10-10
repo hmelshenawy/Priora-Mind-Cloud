@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 from agentcore.config import Configs
 from agentcore.schemas import ChatRequest
-from agentcore.agent import Agent
+from agentcore.agent import Agent, OrchAgent
 from agentcore.skills.skill_loader import SkillLoader
 from agentcore.tools.tools import tools_registery, available_tools
 from agentcore.context import access_token, mindSpaceId
-from fastapi.responses import StreamingResponse 
+from fastapi.responses import StreamingResponse
+
+
 app = FastAPI(title="Priora AI Agent")
 skills = SkillLoader(available_tools, tools_registery).list()
-agent = Agent(Configs.OLLAMA_MODEL_NAME, available_tools, tools_registery, skills, 10)
+agent = Agent(Configs.OLLAMA_MODEL_NAME,tools= available_tools,tool_registry= tools_registery,skills= skills,steps= 10)
 
 
 

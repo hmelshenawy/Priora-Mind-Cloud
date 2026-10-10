@@ -1,8 +1,16 @@
 import { BadRequestException, ConflictException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMemoryDto } from './dto/create-memory.dto';
-import { UpdateMemoryDto } from './dto/update-memory.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { randomUUID } from 'crypto';
+import { Prisma } from '../../generated/prisma/client';
+
+type SimilarMemory = {
+  id: string;
+  type: string;
+  content: string;
+  confidence: number | null;
+  similarity: number;
+};
 
 @Injectable()
 export class MemoryService {
@@ -20,6 +28,11 @@ export class MemoryService {
     if (isExist) {
       throw new ConflictException("Memory Already Exist")
     }
+
+    const dupCandidates = await this.searchSimilarMemories(dto.embedding, userId, mindSpaceId, dto.type,3 , 0.80)
+    if (dupCandidates.length > 0) {
+  throw new ConflictException("Similar Memory Already Exists");
+}
     const memory = await this.insertMemory(dto, userId, mindSpaceId)
 
     return {
@@ -31,9 +44,9 @@ export class MemoryService {
   async search(dto, userId: string, mindSpaceId: string) {
 
     // validation / business logic هنا
-    console.log(userId)
-    console.log(dto)
-    console.log(mindSpaceId)
+    // console.log(userId)
+    // console.log(dto)
+    // console.log(mindSpaceId)
     return this.searchSimilarMemories(
       dto.embedding,
       userId,
@@ -95,12 +108,13 @@ export class MemoryService {
     embedding: number[],
     userId: string,
     mindSpaceId: string,
+    typ?: string,
     limit = 5,
     threshold = 0.6,
-  ) {
+  ): Promise<SimilarMemory[]> {
     const vector = `[${embedding.join(',')}]`;
 
-    return this.prisma.$queryRaw<any[]>`
+    return this.prisma.$queryRaw<SimilarMemory[]>`
     SELECT
       "id",
       "type",
@@ -110,6 +124,7 @@ export class MemoryService {
     FROM "Memory"
     WHERE "userId" = ${userId}
       AND "mindSpaceId" = ${mindSpaceId}
+      ${typ ? Prisma.sql`AND "type" = ${typ}::"MemoryType"` : Prisma.empty}
       AND 1 - ("embedding" <=> ${vector}::vector) >= ${threshold}
     ORDER BY "embedding" <=> ${vector}::vector
     LIMIT ${limit}

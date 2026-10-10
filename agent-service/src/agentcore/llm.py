@@ -1,13 +1,13 @@
-from ollama import chat
+from ollama import AsyncClient
 from abc import ABC, abstractmethod
 
 class LlmClient(ABC):    
     @abstractmethod
-    def chat(self, message):
+    async def chat(self, message):
         return
 
     @abstractmethod
-    def stream(self, message):
+    async def stream(self, message):
         return 
 # -----------------------
     
@@ -16,11 +16,12 @@ class OllamaClient(LlmClient):
         self.model_name = model_name
         self.tools= tools
         self.tool_registry= tool_registry
+        self.client = AsyncClient()
 
         
-    def stream(self, messages:list, format = None, tools= None):
-        print("LLM CONTEXT: ", messages)
-        response = chat(stream = True,
+    async def stream(self, messages:list, format = None, tools= None):
+        # print("LLM CONTEXT: ", messages)
+        response =await self.client.chat(stream = True,
                         model = self.model_name,
                         messages=messages,
                         tools= tools,
@@ -31,8 +32,8 @@ class OllamaClient(LlmClient):
         return response
 
 
-    def chat(self, messages: list, format = None, tools = None):
-        response =chat(
+    async def chat(self, messages: list, format = None, tools = None):
+        response =await self.client.chat(
             model = self.model_name,
             messages=messages,
             tools= tools,
