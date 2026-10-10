@@ -14,20 +14,28 @@ import { AgentModule } from './agent/agent.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { APP_GUARD } from '@nestjs/core';
 import { MemoryModule } from './memory/memory.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule, AgentModule,
-    ThrottlerModule.forRoot({
-      throttlers:[{ttl: 60000,
-        limit:100,
-      }]
-    }),
-    MemoryModule
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule, AgentModule,
+  ThrottlerModule.forRoot({
+    throttlers: [{
+      ttl: 60000,
+      limit: 100,
+    }]
+  }),
+    MemoryModule,
+  BullModule.forRoot({
+    connection: {
+      host: process.env.REDIS_HOST ?? '127.0.0.1',
+      port: Number(process.env.REDIS_PORT ?? 6379),
+    },
+  }),
   ],
   controllers: [AppController],
   providers: [AppService, {
     provide: APP_GUARD,
     useClass: ThrottlerGuard,
-  }, ],
+  },],
 })
-export class AppModule {}
+export class AppModule { }

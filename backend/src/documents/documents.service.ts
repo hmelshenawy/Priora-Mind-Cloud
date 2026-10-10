@@ -3,11 +3,14 @@ import { StorageService } from './storage.service';
 import { randomUUID } from 'crypto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RagService } from './rag.service';
-import { error } from 'console';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class DocumentsService {
     constructor(
+        @InjectQueue('document-processing')
+        private readonly documentQueue: Queue,
         private readonly storage: StorageService,
         private readonly prisma: PrismaService,
         private readonly rag: RagService,
@@ -23,8 +26,8 @@ export class DocumentsService {
 
         const storageKey = `users/${userId}/mindspaces/${mindSpaceId}/documents/${randomUUID()}.pdf`;
 
-        const existKey = await this.prisma.document.findFirst({where: {storageKey: storageKey, mindSpaceId: mindSpaceId}})
-        if(existKey){
+        const existKey = await this.prisma.document.findFirst({ where: { storageKey: storageKey, mindSpaceId: mindSpaceId } })
+        if (existKey) {
             throw new ConflictException("Storage Key already exist!!")
         }
 
@@ -45,23 +48,37 @@ export class DocumentsService {
         }
 
         try {
-            const rag = await this.rag.ingest(storageKey, documentMetaData.id, mindSpaceId)
-            const updatedMetaData = await this.prisma.document.update({
-                where: { id: documentMetaData.id, },
-                data: { status: 'READY' },
-            })
+            const job = await this.documentQueue.add(
+                'process-document',
+                {
+                    documentId: documentMetaData.id,
+                    storageKey: result,
+                    mindSpaceId,
+                },
+                {
+                    jobId: documentMetaData.id,
+                    attempts: 3,
+                    backoff: {
+                        type: 'exponential',
+                        delay: 3000,
+                    },
+                },
+            );
+
             return {
-                result,
-                documentMetaData: updatedMetaData,
-                rag,
+                documentId: documentMetaData.id,
+                jobId: job.id,
+                status: 'PENDING',
             };
         } catch (error) {
-            console.error('RAG ingestion failed', error);
+            console.error('Failed to enqueue document:', error);
+
             await this.prisma.document.update({
-                where: { id: documentMetaData.id, },
+                where: { id: documentMetaData.id },
                 data: { status: 'FAILED' },
             });
-            throw new BadRequestException("RAG failed!!")
+
+            throw new BadRequestException('Failed to queue document');
         }
     }
 
@@ -82,5 +99,34 @@ export class DocumentsService {
             throw new BadRequestException("Failed To delete!!")
         }
         return await this.prisma.document.delete({ where: { id: id } })
+    }
+
+    async testQueue() {
+        const document = await this.prisma.document.findFirst({
+            where: { status: 'READY' },
+        });
+
+        if (!document) {
+            throw new NotFoundException('No test document found');
+        }
+
+        const job = await this.documentQueue.add(
+            'process-document',
+            {
+                documentId: document.id,
+                storageKey: document.storageKey,
+                mindSpaceId: document.mindSpaceId,
+                forceFail: true,
+            },
+            {
+                attempts: 3,
+                backoff: {
+                    type: 'exponential',
+                    delay: 3000,
+                },
+            },
+        );
+
+        return { jobId: job.id };
     }
 }

@@ -5,11 +5,18 @@ services:
     container_name: priora-backend
     env_file:
       - ./backend/.env.docker
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
     expose:
       - "3000"
     depends_on:
-      - agent
-      - rag
+      agent:
+        condition: service_started
+      rag:
+        condition: service_started
+      redis:
+        condition: service_healthy
 
   agent:
     build:
@@ -20,6 +27,8 @@ services:
     networks:
       - default
       - n8n_default
+    environment:
+      PYTHONUNBUFFERED: "1"
 
   rag:
     build:
@@ -51,6 +60,23 @@ services:
     networks:
       - default
       - n8n_default
+
+  redis:
+    image: redis:7-alpine
+    container_name: priora-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      
 networks:
   n8n_default:
     external: true
+
+volumes:
+  redis-data:

@@ -1,17 +1,18 @@
+export type DocumentStatus = 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED';
+
 export type DocumentRecord = {
   id: string;
   mindSpaceId: string;
   fileName: string;
-  status: string;
+  status: DocumentStatus;
   createdAt: string;
   updatedAt: string;
 };
 
 export type UploadDocumentResponse = {
-  result: string;
-  documentMetaData: DocumentRecord & {
-    storageKey: string;
-  };
+  documentId: string;
+  jobId: string;
+  status: 'PENDING';
 };
 
 export type DocumentsApiErrorCode = 'unauthorized' | 'notFound' | 'requestFailed';
@@ -51,10 +52,11 @@ async function request<T>(url: string, accessToken: string, init?: RequestInit) 
   return response.json() as Promise<T>;
 }
 
-export function listDocuments(accessToken: string, mindSpaceId: string) {
+export function listDocuments(accessToken: string, mindSpaceId: string, signal?: AbortSignal) {
   return request<DocumentRecord[]>(
     `${API_BASE_URL}/documents?mindSpaceId=${encodeURIComponent(mindSpaceId)}`,
     accessToken,
+    {signal},
   );
 }
 

@@ -14,23 +14,13 @@ import {clearSelectedMindSpaceId} from '@/lib/mindspace-selection';
 
 type ListStatus = 'idle' | 'loading' | 'empty' | 'success' | 'error';
 
-function isDisplayableDocument(value: unknown): value is DocumentRecord {
-  if (!value || typeof value !== 'object') return false;
-  const document = value as Record<string, unknown>;
-  return (
-    typeof document.id === 'string' &&
-    typeof document.mindSpaceId === 'string' &&
-    typeof document.fileName === 'string' &&
-    typeof document.status === 'string'
-  );
-}
-
 export function Documents({mindSpaceId}: {mindSpaceId: string}) {
   const t = useTranslations('documents');
   const locale = useLocale();
   const router = useRouter();
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [listStatus, setListStatus] = useState<ListStatus>('idle');
+  const [listError, setListError] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState('');
   const [uploadError, setUploadError] = useState('');
@@ -38,7 +28,7 @@ export function Documents({mindSpaceId}: {mindSpaceId: string}) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mindSpaceRef = useRef(mindSpaceId);
-  const listRequest = useRef(0);
+  const refreshDocuments = useRef<(afterUpload?: boolean) => void>(() => {});
   const uploadRequest = useRef(0);
 
   function redirectToLogin() {
@@ -48,11 +38,17 @@ export function Documents({mindSpaceId}: {mindSpaceId: string}) {
   }
 
   useEffect(() => {
-    const requestId = ++listRequest.current;
+    let disposed = false;
+    let inFlight = false;
+    let refreshQueued = false;
+    let needsPolling = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const controller = new AbortController();
     mindSpaceRef.current = mindSpaceId;
     uploadRequest.current += 1;
     setDocuments([]);
     setListStatus('loading');
+    setListError(false);
     setSelectedFile(null);
     setValidationError('');
     setUploadError('');
@@ -60,38 +56,67 @@ export function Documents({mindSpaceId}: {mindSpaceId: string}) {
     setIsUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    const cleanup = () => {
-      listRequest.current += 1;
-      uploadRequest.current += 1;
-    };
     const token = getAuthState()?.accessToken;
-    if (!token) {
-      redirectToLogin();
-      return cleanup;
-    }
+    const isCurrent = () => !disposed && getAuthState()?.accessToken === token;
 
-    listDocuments(token, mindSpaceId)
-      .then((result) => {
-        if (requestId !== listRequest.current || mindSpaceRef.current !== mindSpaceId) return;
-        setDocuments((current) => {
-          const resultIds = new Set(result.map(({id}) => id));
-          return [...current.filter(({id}) => !resultIds.has(id)), ...result];
-        });
-        setListStatus((current) => current === 'success' || result.length > 0 ? 'success' : 'empty');
-      })
-      .catch((error: unknown) => {
-        if (requestId !== listRequest.current || mindSpaceRef.current !== mindSpaceId) return;
+    async function refresh(afterUpload = false) {
+      if (!isCurrent()) return;
+      if (!token) {
+        redirectToLogin();
+        return;
+      }
+      clearTimeout(timer);
+      // Keep retrying if the first list refresh after an accepted upload fails.
+      if (afterUpload) needsPolling = true;
+      if (inFlight) {
+        if (afterUpload) refreshQueued = true;
+        return;
+      }
+      inFlight = true;
+      try {
+        const result = await listDocuments(token, mindSpaceId, controller.signal);
+        if (!isCurrent() || refreshQueued) return;
+        needsPolling = result.some(({status}) => status === 'PENDING' || status === 'PROCESSING');
+        setDocuments(result);
+        setListStatus(result.length > 0 ? 'success' : 'empty');
+        setListError(false);
+      } catch (error) {
+        if (!isCurrent() || refreshQueued) return;
         if (error instanceof DocumentsApiError && error.code === 'unauthorized') {
+          needsPolling = false;
           redirectToLogin();
           return;
         }
-        setListStatus((current) => current === 'success' ? current : 'error');
-      });
+        setListError(true);
+        setListStatus((current) => current === 'loading' ? 'error' : current);
+      } finally {
+        inFlight = false;
+        if (isCurrent()) {
+          if (refreshQueued) {
+            refreshQueued = false;
+            void refresh();
+          } else if (needsPolling) {
+            timer = setTimeout(() => void refresh(), 3000);
+          }
+        }
+      }
+    }
 
-    return cleanup;
+    refreshDocuments.current = refresh;
+    // Let an immediately cleaned-up effect (React Strict Mode) skip its request.
+    void Promise.resolve().then(() => refresh());
+
+    return () => {
+      disposed = true;
+      clearTimeout(timer);
+      controller.abort();
+      refreshDocuments.current = () => {};
+      uploadRequest.current += 1;
+    };
   }, [mindSpaceId, locale, router]);
 
   function documentStatus(status: string) {
+    if (status === 'PENDING') return t('statusPending');
     if (status === 'PROCESSING') return t('statusProcessing');
     if (status === 'READY') return t('statusReady');
     if (status === 'FAILED') return t('statusFailed');
@@ -136,17 +161,13 @@ export function Documents({mindSpaceId}: {mindSpaceId: string}) {
     setIsUploading(true);
 
     try {
-      const response = await uploadDocument(token, expectedMindSpace, selectedFile);
+      await uploadDocument(token, expectedMindSpace, selectedFile);
       if (requestId !== uploadRequest.current || mindSpaceRef.current !== expectedMindSpace) return;
 
-      const metadata: unknown = response.documentMetaData;
-      if (isDisplayableDocument(metadata) && metadata.mindSpaceId === expectedMindSpace) {
-        setDocuments((current) => [metadata, ...current.filter(({id}) => id !== metadata.id)]);
-        setListStatus('success');
-      }
       setUploadSucceeded(true);
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
+      refreshDocuments.current(true);
     } catch (error) {
       if (requestId !== uploadRequest.current || mindSpaceRef.current !== expectedMindSpace) return;
       if (error instanceof DocumentsApiError && error.code === 'unauthorized') {
@@ -200,13 +221,19 @@ export function Documents({mindSpaceId}: {mindSpaceId: string}) {
           {listStatus === 'empty' ? <p>{t('listEmpty')}</p> : null}
           {listStatus === 'success' ? <p>{t('listLoaded')}</p> : null}
         </div>
-        {listStatus === 'error' ? <p className="documents-error" role="alert">{t('listError')}</p> : null}
+        {listError ? (
+          <div>
+            <p className="documents-error" role="alert">{t('listError')}</p>
+            <button type="button" onClick={() => refreshDocuments.current()}>{t('retry')}</button>
+          </div>
+        ) : null}
         {listStatus === 'success' ? (
           <ul className="documents-list">
             {documents.map((document) => (
               <li key={document.id}>
                 <p><strong>{t('fileNameLabel')}:</strong> <span>{document.fileName}</span></p>
-                <p><strong>{t('statusLabel')}:</strong> <span>{documentStatus(document.status)}</span></p>
+                <p><strong>{t('statusLabel')}:</strong> <span className="document-status" data-status={document.status} aria-live="polite">{documentStatus(document.status)}</span></p>
+                {document.status === 'FAILED' ? <p className="documents-error">{t('processingError')}</p> : null}
               </li>
             ))}
           </ul>

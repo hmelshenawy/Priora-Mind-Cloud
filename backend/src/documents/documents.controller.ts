@@ -8,12 +8,12 @@ import { UploadFileDto } from './Dto/upload.file.dto';
 @Controller('documents')
 @UseGuards(JwtGuard)
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(private readonly documentsService: DocumentsService) { }
 
 
   @Post()
   @UseInterceptors(FileInterceptor("file"))
-  uploadFile(@Body() body: UploadFileDto,@UploadedFile() file:Express.Multer.File, @Req() req: any){
+  uploadFile(@Body() body: UploadFileDto, @UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user.userId
     const mindSpaceId = body.mindSpaceId
     console.log(file)
@@ -21,16 +21,21 @@ export class DocumentsController {
   }
 
   @Get()
-  getAll(@Query('mindSpaceId') mindSpaceId: string,@Req() req: any){
+  getAll(@Query('mindSpaceId') mindSpaceId: string, @Req() req: any) {
     const userId = req.user.userId
     return this.documentsService.getAll(userId, mindSpaceId)
   }
 
 
   @Delete(":id")
-  remove(@Param("id") id: string, @Req() req: any){
+  remove(@Param("id") id: string, @Req() req: any) {
     const userId = req.user.userId
     return this.documentsService.remove(id, userId)
 
+  }
+
+  @Post('/test-queue')
+  async testQueue() {
+    return this.documentsService.testQueue();
   }
 }
