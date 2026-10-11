@@ -6,7 +6,10 @@ from agentcore.skills.skill_loader import UserSkillProvider, BuildinSkillProvide
 from agentcore.tools.tools import tools_registery, available_tools
 from agentcore.context import access_token, mindSpaceId
 from fastapi.responses import StreamingResponse
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Priora AI Agent")
 # skills = BuildinSkillProvider(available_tools, tools_registery).list()
@@ -42,8 +45,8 @@ async def chat(body: ChatRequest):
     async def generate():
         token_ctx = access_token.set(token)
         mindSpace_ctx = mindSpaceId.set(mindSpace)
-        print("USER SKILLS:", skill_manager.user.list())
-        print("REGISTERED:", "load_skill" in tools_registery)
+        logger.info("USER SKILLS: %s", skill_manager.user.list())
+        logger.info("REGISTERED: %s", "load_skill" in tools_registery)
         try:
             async for chunk in agent.stream(message, history):
                 yield chunk

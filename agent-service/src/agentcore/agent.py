@@ -1,5 +1,5 @@
 from agentcore.llm import  OllamaClient
-from agentcore.prompts.prompts import SYSTEM_PROMPT
+from agentcore.prompts.prompts import get_system_prompt
 from agentcore.memory.memory import UserProfileMemory, EventMemory
 from agentcore.skills.skill_loader import UserSkillProvider, BuildinSkillProvider, SkillManager
 import asyncio
@@ -54,7 +54,7 @@ class Agent(BaseAgent):
     async def run(self, user_message, history):
         step=0
         messages = []
-        messages.append(SYSTEM_PROMPT)
+        messages.append(get_system_prompt())
         messages.append({
             "role": "system",
             "content": f"""
@@ -219,7 +219,7 @@ class Agent(BaseAgent):
             for skill in self.skills.user.list()
         ]
         messages = [
-            SYSTEM_PROMPT,
+            get_system_prompt(),
             {
                 "role": "system",
                 "content": f"""
@@ -258,22 +258,27 @@ class Agent(BaseAgent):
     
     async def call_tool(self, name: str, args: dict):
         tool = self.tool_registry.get(name)
+
         if not tool:
             return {
                 "ok": False,
                 "status": "UNKNOWN TOOL!!"
             }
-        
+
         try:
-            result = tool( **args)
+            result = tool(**args)
+
             if inspect.isawaitable(result):
                 return await result
+
             return result
+
         except Exception as e:
             print(str(e))
-            result = {"ok": False,
-                    "status": "TOOL EXECUTION FAILED!!",
-                    }
+            return {
+                "ok": False,
+                "status": "TOOL EXECUTION FAILED!!"
+            }
         
 
 
@@ -308,22 +313,29 @@ class OrchAgent(Agent):
         print("CHAT", content)
         return 
 
-    def call_tool(self, name: str, args: dict):
-            tool = self.tool_registry.get(name)
-            if not tool:
-                return {
-                    "ok": False,
-                    "status": "UNKNOWN TOOL!!"
-                }
-            
-            try:
-                result = tool( **args)
-            except Exception as e:
-                print(str(e))
-                result = {"ok": False,
-                        "status": "TOOL EXECUTION FAILED!!",
-                        }
-            return result
+    async def call_tool(self, name: str, args: dict):
+        tool = self.tool_registry.get(name)
+
+        if not tool:
+            return {
+                "ok": False,
+                "status": "UNKNOWN TOOL!!"
+            }
+
+        try:
+            if inspect.iscoroutinefunction(tool):
+                result = await tool(**args)
+            else:
+                result = await asyncio.to_thread(tool, **args)
+
+        except Exception as e:
+            print(str(e))
+            result = {
+                "ok": False,
+                "status": "TOOL EXECUTION FAILED!!"
+            }
+
+        return result
 
     def search_memories(self, user_message):
         return super().search_memories(user_message)
