@@ -471,13 +471,14 @@ textarea {
   margin-bottom: 24px;
 }
 
-.message-list li {
+.message-list > li {
+  min-width: 0;
   max-width: 82%;
   border-radius: 16px;
   padding: 14px 16px;
 }
 
-.message-list strong {
+.message-list > li > strong {
   display: block;
   margin-bottom: 5px;
   font-size: 13px;
@@ -486,6 +487,45 @@ textarea {
 .message-list p {
   margin: 0;
   white-space: pre-wrap;
+}
+
+.message-content {
+  overflow-wrap: anywhere;
+}
+
+.message-content > * + * {
+  margin-top: 0.75em;
+}
+
+.message-content ul,
+.message-content ol {
+  padding-inline-start: 1.5em;
+}
+
+.message-content ul {
+  list-style-type: disc;
+}
+
+.message-content ol {
+  list-style-type: decimal;
+}
+
+.message-content :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: 700;
+}
+
+.message-content pre {
+  overflow-x: auto;
+  white-space: pre;
+  text-align: left;
+}
+
+.message-content code {
+  unicode-bidi: isolate;
+}
+
+.message-content a {
+  text-decoration: underline;
 }
 
 .user-message {
@@ -1040,7 +1080,7 @@ textarea {
     flex-direction: column;
   }
 
-  .message-list li {
+  .message-list > li {
     max-width: 92%;
   }
 

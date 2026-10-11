@@ -38,22 +38,30 @@ async function setup(page: Page, locale: string) {
 }
 
 for (const locale of ['en', 'ar']) {
-  test(`${locale}: both roles use content direction and preserve Markdown text and bubble alignment`, async ({page}) => {
+  test(`${locale}: both roles render Markdown with content direction and unchanged bubble alignment`, async ({page}) => {
     await setup(page, locale);
     for (const role of ['user', 'assistant']) {
       const bubbles = page.locator(`.${role}-message`);
       for (const [index, sample] of samples.entries()) {
         const bubble = bubbles.nth(index);
-        const content = bubble.locator('p');
+        const content = bubble.locator('.message-content');
         await expect(content).toHaveAttribute('dir', 'auto');
         await expect(content).toHaveCSS('direction', sample.direction);
-        expect(await content.textContent()).toBe(sample.text);
+        if (index < 4) expect(await content.textContent()).toBe(sample.text);
+        if (index === 4 || index === 5) {
+          await expect(content.locator('strong')).toHaveText(index === 4 ? 'تعليمات' : 'Instructions');
+          await expect(content.locator('code')).toHaveText('fetch(url)');
+          await expect(content.locator('ul')).toHaveCSS('list-style-type', 'disc');
+          await expect(content.locator('ol')).toHaveCSS('list-style-type', 'decimal');
+          await expect(content.locator('strong')).toHaveCSS('display', 'inline');
+          await expect(content.locator('li').first()).toHaveCSS('padding', '0px');
+        }
         await expect(bubble).toHaveCSS('direction', locale === 'ar' ? 'rtl' : 'ltr');
         await expect(bubble).toHaveCSS('justify-self', role === 'user' ? 'end' : 'start');
-        const code = content.locator('bdi');
+        const code = content.locator('pre');
         if (sample.text.includes('```') || sample.text.includes('~~~')) {
           await expect(code).toHaveCSS('direction', 'ltr');
-          await expect(code).toHaveCSS('unicode-bidi', 'isolate');
+          await expect(code.locator('code')).toHaveCSS('unicode-bidi', 'isolate');
         }
       }
     }
@@ -65,13 +73,14 @@ for (const locale of ['en', 'ar']) {
     await page.route('**/api/chat-stream/*', (route) => route.fulfill({contentType: 'text/plain; charset=utf-8', body: answer}));
     await page.locator('#message-content').fill('Explain this API مثال');
     await page.locator('#message-content').press('Enter');
-    await expect(page.locator('.user-message p').last()).toHaveCSS('direction', 'ltr');
-    const reply = page.locator('.assistant-message p').last();
+    await expect(page.locator('.user-message .message-content').last()).toHaveCSS('direction', 'ltr');
+    const reply = page.locator('.assistant-message .message-content').last();
     await expect(reply).toHaveCSS('direction', 'rtl');
     // Observe the open code fence before the progressive reveal has completed.
-    await expect(reply.locator('bdi')).toHaveCSS('direction', 'ltr');
-    await expect.poll(() => reply.textContent(), {timeout: 15000}).toBe(answer);
-    await expect(reply.locator('bdi')).toHaveCSS('direction', 'ltr');
+    await expect(reply.locator('pre')).toHaveCSS('direction', 'ltr');
+    await expect(reply.locator('p').last()).toHaveText('استخدم API للحصول على النتيجة.', {timeout: 15000});
+    await expect(reply.locator('pre')).toHaveCSS('direction', 'ltr');
+    expect(await reply.locator('pre code').textContent()).toBe('const greeting = "مرحباً";\nconsole.log(greeting);\n');
     await expect(page.locator('#message-content')).toBeEnabled();
   });
 }
