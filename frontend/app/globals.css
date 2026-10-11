@@ -524,6 +524,15 @@ textarea {
   unicode-bidi: isolate;
 }
 
+.message-content :is(.katex, .katex-display, .katex-error) {
+  unicode-bidi: isolate;
+}
+
+.message-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .message-content a {
   text-decoration: underline;
 }

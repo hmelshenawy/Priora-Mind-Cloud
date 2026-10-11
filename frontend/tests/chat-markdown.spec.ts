@@ -25,6 +25,96 @@ async function setup(page: Page, locale: string, records: StoredMessage[]) {
 }
 
 for (const locale of ['en', 'ar']) {
+  test(`${locale}: historical math, arrows and emojis preserve prose direction, code and bubble alignment`, async ({page}) => {
+    const formula = String.raw`$x^2 + y^2 = z^2$`;
+    const arrow = String.raw`$\rightarrow$`;
+    const block = '\n\n$$\n\\frac{a}{b} \\Rightarrow c\n$$';
+    const symbols = '→ ← ⇒ 🚀 ✅ 🔥 😀';
+    const literalCode = '$x^2$ \\rightarrow\n    🚀 &#x20;';
+    const suffix = '\n\n' + symbols + '\n\n`$x^2$`\n\n```text\n' + literalCode + '\n```';
+    const arabic = `${formula} دي المعادلة وده السهم ${arrow}${block}${suffix}`;
+    const english = `The equation ${formula} and arrow ${arrow}${block}${suffix}`;
+    await setup(page, locale, [message('1', 'ASSISTANT', arabic), message('2', 'USER', english),
+      message('3', 'ASSISTANT', String.raw`خطأ $\notACommand$ وبعده نص سليم`),
+      message('4', 'ASSISTANT', String.raw`$\href{javascript:alert(1)}{click}$ <img src=x onerror=alert(1)>`)]);
+    for (const [index, direction] of ['rtl', 'ltr'].entries()) {
+      const content = page.locator('.message-content').nth(index);
+      await expect(content).toHaveCSS('direction', direction);
+      await expect(content.locator('.katex')).toHaveCount(3);
+      await expect(content.locator('.katex-display')).toHaveCount(1);
+      await expect(content.locator('.katex-error')).toHaveCount(0);
+      for (const math of await content.locator('.katex').all()) {
+        await expect(math).toHaveAttribute('dir', 'ltr');
+        await expect(math).toHaveCSS('direction', 'ltr');
+        await expect(math).toHaveCSS('unicode-bidi', 'isolate');
+        await expect(math.locator('math')).toHaveCount(1);
+      }
+      await expect(content.locator('.katex-html').nth(1)).toHaveText('→');
+      await expect(content.locator('.katex-display')).toHaveCSS('display', 'block');
+      await expect(content).toContainText(symbols);
+      await expect(content.locator('p > code')).toHaveText('$x^2$');
+      expect(await content.locator('pre code').textContent()).toBe(literalCode + '\n');
+      await expect(content.locator('pre')).toHaveCSS('direction', 'ltr');
+      await expect(content.locator('pre .katex, code .katex')).toHaveCount(0);
+    }
+    await expect(page.locator('.assistant-message').first()).toHaveCSS('justify-self', 'start');
+    await expect(page.locator('.user-message')).toHaveCSS('justify-self', 'end');
+    await expect(page.locator('.message-content').nth(2).locator('.katex-html')).toHaveText('\\notACommand');
+    await expect(page.locator('.message-content').nth(2)).toContainText('وبعده نص سليم');
+    await expect(page.locator('.message-content a, .message-content img')).toHaveCount(0);
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator('.katex').first()).toHaveCSS('font-family', /KaTeX_Main/);
+  });
+
+  test(`${locale}: streamed math and multibyte emojis render before EOF and survive reload`, async ({page}) => {
+    const records: StoredMessage[] = [];
+    await setup(page, locale, records);
+    await page.evaluate(() => {
+      const originalFetch = window.fetch;
+      window.fetch = async (input, init) => {
+        if (String(input).startsWith('/api/chat-stream/')) {
+          return new Response(new ReadableStream<Uint8Array>({start(controller) {
+            (window as Window & {mathStream?: ReadableStreamDefaultController<Uint8Array>}).mathStream = controller;
+          }}));
+        }
+        return originalFetch(input, init);
+      };
+    });
+    await page.locator('#message-content').fill('Explain $x^2$ 🚀');
+    await page.locator('#message-content').press('Enter');
+    const reply = page.locator('.assistant-message .message-content');
+    await expect(reply).toHaveCount(1);
+    async function push(text: string, done = false) {
+      await page.evaluate(({text, done}) => {
+        const stream = (window as Window & {mathStream?: ReadableStreamDefaultController<Uint8Array>}).mathStream!;
+        for (const byte of new TextEncoder().encode(text)) stream.enqueue(new Uint8Array([byte]));
+        if (done) stream.close();
+      }, {text, done});
+    }
+    const first = 'السهم $\\right';
+    await push(first);
+    await expect(reply).toContainText('right');
+    const second = 'arrow$ 🚀 ✅ 🔥 😀 → ← ⇒\n\n$$\nx^2 + y^2 = z^2\n';
+    await push(second);
+    await expect(reply.locator('.katex-html').first()).toHaveText('→');
+    await expect(reply).toContainText('🚀 ✅ 🔥 😀 → ← ⇒');
+    await expect(page.locator('#message-content')).toBeDisabled();
+    const last = '$$\n\nانتهى.';
+    await push(last, true);
+    await expect(page.locator('#message-content')).toBeEnabled({timeout: 15000});
+    await expect(reply).toHaveCSS('direction', 'rtl');
+    await expect(reply.locator('.katex')).toHaveCount(2);
+    await expect(reply.locator('.katex-display')).toHaveCSS('direction', 'ltr');
+    await expect(reply.locator('.katex-error')).toHaveCount(0);
+    await expect(page.locator('.user-message .katex')).toHaveCount(1);
+    const rendered = await reply.innerHTML();
+    records.push(message('saved', 'ASSISTANT', first + second + last));
+    await page.reload();
+    await page.getByRole('button', {name: 'Markdown test', exact: true}).click();
+    await expect(reply.locator('.katex')).toHaveCount(2);
+    expect(await reply.innerHTML()).toBe(rendered);
+  });
+
   test(`${locale}: persisted Markdown preserves indentation, entities and intentional escapes without executing HTML`, async ({page}) => {
     const literal = String.raw`\*\*literal bold\*\* and \`literal code\` and C:\Users\name`;
     const unsafe = '<img src="x" onerror="window.markdownXss = true">\n\n<script>window.markdownXss = true</script>\n\n[unsafe](javascript:alert%281%29)\n\n&lt;img src=x onerror=alert(1)&gt;';

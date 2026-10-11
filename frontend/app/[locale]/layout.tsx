@@ -3,6 +3,7 @@ import {hasLocale, NextIntlClientProvider} from 'next-intl';
 import {setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
+import 'katex/dist/katex.min.css';
 import '../globals.css';
 
 export function generateStaticParams() {
