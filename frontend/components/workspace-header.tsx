@@ -16,6 +16,7 @@ const titleKeys: Record<string, string> = {
   tasks: 'sectionTasks',
   notes: 'sectionNotes',
   memories: 'sectionMemories',
+  skills: 'sectionSkills',
   settings: 'sectionSettings',
 };
 

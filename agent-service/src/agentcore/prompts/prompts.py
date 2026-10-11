@@ -131,6 +131,21 @@ RULES:
    Use "user" for the current user.
 8. Extract all valid events; salience is handled separately.
 
+9. Extract events ONLY when the CURRENT_USER_MESSAGE
+explicitly reports a real-world event.
+
+CONVERSATION_HISTORY is for resolving references,
+entities, and dates only.
+
+NEVER extract events from assistant messages,
+retrieved memories, or previous conversation turns.
+
+Questions about past events do not count as
+new event reports.
+
+If CURRENT_USER_MESSAGE does not report an event,
+return {"events":[]}.
+
 EXAMPLE:
 
 REFERENCE_TIME: 2026-10-10T17:00:00+04:00

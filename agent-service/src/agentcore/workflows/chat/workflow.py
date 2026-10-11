@@ -2,13 +2,13 @@ from agentcore.llm import LlmClient
 from agentcore.workflows.step import BaseStep
 from agentcore.prompts.prompts import SYSTEM_PROMPT
 from agentcore.memory.memory import UserProfileMemory
-from agentcore.skills.skill_loader import SkillLoader
+from agentcore.skills.skill_loader import SkillManager
 import inspect
 
 
 # -----------------------------------------
 class ResponseStep(BaseStep):
-    def __init__(self, llm: LlmClient, tools, tool_registry, skills: SkillLoader, steps = 10):
+    def __init__(self, llm: LlmClient, tools, tool_registry, skills: SkillManager, steps = 10):
         super().__init__()
         self.llm = llm
         self.tools = tools

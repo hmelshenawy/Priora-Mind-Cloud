@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { FormEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
@@ -31,6 +31,21 @@ const REVEAL_SPEED = {
   boundaryLookahead: 8,
   revealIntervalMs: 50,
 };
+
+function messageText(content: string) {
+  // Preserve the existing plain-text Markdown display. Isolate fenced code,
+  // including an unfinished fence during streaming, from the message direction.
+  const fences = /^ {0,3}(`{3,}|~{3,})[^\r\n]*(?:\r?\n|$)[\s\S]*?(?:^ {0,3}\1[ \t]*(?=\r?$)|(?![\s\S]))/gm;
+  const parts: ReactNode[] = [];
+  let offset = 0;
+  for (const match of content.matchAll(fences)) {
+    parts.push(content.slice(offset, match.index));
+    parts.push(<bdi dir="ltr" key={match.index}>{match[0]}</bdi>);
+    offset = match.index + match[0].length;
+  }
+  parts.push(content.slice(offset));
+  return parts;
+}
 
 export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
   const t = useTranslations('chat');
@@ -525,7 +540,7 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
               {messages.map((message) => (
                 <li className={message.role === 'USER' ? 'user-message' : 'assistant-message'} key={message.id}>
                   <strong>{message.role === 'USER' ? t('userRole') : t('assistantRole')}</strong>
-                  <p>{message.content}</p>
+                  <p dir="auto">{messageText(message.content)}</p>
                 </li>
               ))}
             </ol>

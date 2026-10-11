@@ -14,6 +14,7 @@ const sections = [
   {segment: 'tasks', key: 'sectionTasks', icon: 'T'},
   {segment: 'notes', key: 'sectionNotes', icon: 'N'},
   {segment: 'memories', key: 'sectionMemories', icon: 'M'},
+  {segment: 'skills', key: 'sectionSkills', icon: 'S'},
 ] as const;
 
 const settingsSection = {segment: 'settings', key: 'sectionSettings', icon: 'S'} as const;

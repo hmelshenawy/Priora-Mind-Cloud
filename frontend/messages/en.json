@@ -48,7 +48,8 @@
     "sectionMemories": "Memories",
     "sectionSettings": "Settings",
     "collapseSidebar": "Collapse sidebar",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "sectionSkills": "My Skills"
   },
   "workspace": {
     "conversationPanelOpen": "Open conversations",
@@ -182,5 +183,38 @@
     "createError": "The MindSpace could not be created. Please try again.",
     "additionalDescription": "Give your new MindSpace a name.",
     "cancel": "Cancel"
+  },
+  "userSkills": {
+    "title": "My Skills",
+    "subtitle": "Manage your personal skills for the AI Agent.",
+    "new": "New skill",
+    "name": "Name",
+    "description": "Description",
+    "instructions": "Instructions",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "enable": "Enable",
+    "disable": "Disable",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create skill",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "empty": "You have no skills yet. Create your first skill to get started.",
+    "createEnabled": "New skills are enabled by default. You can disable them after creation.",
+    "created": "Skill created.",
+    "saved": "Skill updated.",
+    "deleted": "Skill deleted.",
+    "confirmDelete": "Delete “{name}”? This cannot be undone.",
+    "validation": "Enter a name, description, and instructions containing more than whitespace.",
+    "requestFailed": "Unable to complete the request. Please try again.",
+    "notFound": "This skill is no longer available. Refresh the list and try again.",
+    "conflict": "A skill with this name already exists. Choose another name.",
+    "deleteFailed": "The skill was not deleted by the server. It is still in your list.",
+    "unauthorized": "Your session has expired. Please sign in again."
   }
 }

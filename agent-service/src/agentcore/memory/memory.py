@@ -251,7 +251,7 @@ class EventMemory(Memory):
                                                json=payload,
                                                headers=headers)
             print(f"SAVE RESPONSE STATUS", response.json())
-            response.raise_for_status
+            response.raise_for_status()
 
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/event/search"
@@ -275,9 +275,15 @@ class EventMemory(Memory):
         print("RETREIVE EVENT")
         vector = await self.embed(userMessage)
         events =await self.search(vector)
-        print(f"SIMILAR EVENTS: {len(events)}")
 
-        return events
+        relevant_events = [
+        event for event in events
+        if event.get("similarity", 0) >= 0.50
+    ]
+        print(f"SIMILAR EVENTS: {len(events)}")
+        print(f"RELEVANT EVENTS: {len(relevant_events)}")
+
+        return relevant_events
 
     def input_builder(self, user_message:str, chat_history:list[str]):
         from datetime import datetime

@@ -31,7 +31,9 @@ export class UserSkillsService {
   }
 
   async findAll(userId: string, enabled?) {
-    const skills = await this.prisma.userSkill.findMany({where:{userId: userId,  ...(enabled !== undefined && { isEnabled: enabled }),}, orderBy:{createdAt:"desc"}})
+    const skills = await this.prisma.userSkill.findMany({where:{userId: userId,  ...(enabled !== undefined && { isEnabled: enabled }),},
+    select:{id:true, name: true, description: true},
+      orderBy:{createdAt:"desc"}})
     
     return {
       ok: true,
