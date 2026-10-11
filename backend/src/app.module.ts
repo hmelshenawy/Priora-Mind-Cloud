@@ -15,6 +15,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { APP_GUARD } from '@nestjs/core';
 import { MemoryModule } from './memory/memory.module';
 import { BullModule } from '@nestjs/bullmq';
+import { UserSkillsModule } from './user-skills/user-skills.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersModule, MindspacesModule, ConversationsModule, NotesModule, TasksModule, DocumentsModule, AgentModule,
@@ -31,6 +32,7 @@ import { BullModule } from '@nestjs/bullmq';
       port: Number(process.env.REDIS_PORT ?? 6379),
     },
   }),
+  UserSkillsModule,
   ],
   controllers: [AppController],
   providers: [AppService, {
