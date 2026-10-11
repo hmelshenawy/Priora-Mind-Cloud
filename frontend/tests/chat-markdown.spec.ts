@@ -1,7 +1,8 @@
 import {expect, test, type Page} from '@playwright/test';
 
 const code = 'function build() {\n    const entity = "&#x20;";\n    const pattern = /\\w+/;\n    return "أهلاً";\n}\n';
-const markdown = 'خلّينا نشرح **Builder Design Pattern** و*الفكرة* باستخدام `Builder<T>`.\n\n- أول خطوة\n- استخدم API\n\n1. Create builder\n2. ابنِ النتيجة\n\n```ts\n' + code + '```\n\nA&#x20;B &amp; &lt;b&gt;';
+const gfm = '\n\n| الخيار | Result |\n| --- | --- |\n| API | ✅ |\n\n- [x] جاهز\n- [ ] Review\n\n~~قديم~~';
+const markdown = 'خلّينا نشرح **Builder Design Pattern** و*الفكرة* باستخدام `Builder<T>`.\n\n- أول خطوة\n- استخدم API\n\n1. Create builder\n2. ابنِ النتيجة\n\n```ts\n' + code + '```' + gfm + '\n\nA&#x20;B &amp; &lt;b&gt;';
 type StoredMessage = {id: string; role: string; content: string; conversationId: string; createdAt: string};
 const message = (id: string, role: string, content: string): StoredMessage => ({id, role, content, conversationId: 'conversation-1', createdAt: '2026-10-11T00:00:00Z'});
 
@@ -25,6 +26,64 @@ async function setup(page: Page, locale: string, records: StoredMessage[]) {
 }
 
 for (const locale of ['en', 'ar']) {
+  test(`${locale}: rich content has readable hierarchy and accessible responsive tables in both themes`, async ({page}, testInfo) => {
+    const title = locale === 'ar' ? 'خطة البحث والسفر' : 'Research and travel plan';
+    const direction = locale === 'ar' ? 'rtl' : 'ltr';
+    const rich = `# ${title}\n\nFirst paragraph — شرح عربي 🚀  \nIntentional line break.\n\nSecond paragraph with **bold** and *emphasis*.\n\n---\n\n## Comparison\n\n| Destination الوجهة | Schedule الموعد | Research topic الموضوع | Result النتيجة |\n| --- | --- | --- | --- |\n| القاهرة Cairo | Morning صباحًا | Architecture and API | Ready ✅ |\n| دبي Dubai | Evening مساءً | Systems comparison | Review 🔥 |\n\n### Actions\n\n- First item\n  - Nested item\n    - Third level\n- Second item\n\n1. Ordered item\n   1. Nested order\n2. Next item\n\n- [x] Completed\n- [ ] Pending\n\n#### Notes\n\n~~Old plan~~ and https://example.com\n\n##### Formula\n\n$\\rightarrow$ and $x^2$\n\n###### Code\n\n\`Inline<T>\`\n\n\`\`\`ts\n${code}\`\`\``;
+    await setup(page, locale, [message('rich', 'ASSISTANT', rich)]);
+    const content = page.locator('.message-content');
+    await expect(content).toHaveCSS('direction', direction);
+    await expect(content.getByRole('heading')).toHaveCount(6);
+    const sizes = await content.getByRole('heading').evaluateAll((headings) => headings.map((heading) => parseFloat(getComputedStyle(heading).fontSize)));
+    expect(sizes[0]).toBeLessThanOrEqual(24);
+    for (let index = 1; index < sizes.length; index++) expect(sizes[index]).toBeLessThan(sizes[index - 1]);
+    await expect(content.getByRole('separator')).toHaveCSS('border-top-width', '1px');
+    await expect(content.locator('p').first().locator('br')).toHaveCount(1);
+    expect(await content.locator('p').nth(1).evaluate((node) => parseFloat(getComputedStyle(node).marginTop))).toBeGreaterThan(8);
+    await expect(content.locator('ul ul ul')).toHaveCSS('list-style-type', 'square');
+    await expect(content.locator('ol ol')).toHaveCount(1);
+    const listPadding = await content.locator('ul').first().evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {start: parseFloat(style.paddingInlineStart), end: parseFloat(style.paddingInlineEnd)};
+    });
+    expect(listPadding.start).toBeGreaterThan(12);
+    expect(listPadding.end).toBe(0);
+    await expect(content.getByRole('checkbox')).toHaveCount(2);
+    await expect(content.getByRole('checkbox').first()).toBeChecked();
+    await expect(content.getByRole('checkbox').last()).not.toBeChecked();
+    await expect(content.getByRole('checkbox').first()).toBeDisabled();
+    await expect(content.getByRole('checkbox').first()).toHaveAccessibleName(locale === 'ar' ? 'مهمة مكتملة' : 'Completed task');
+    await expect(content.locator('del')).toHaveText('Old plan');
+    await expect(content.getByRole('link', {name: 'https://example.com'})).toHaveAttribute('href', 'https://example.com');
+    await expect(content.locator('.katex')).toHaveCount(2);
+    await expect(content.locator('pre')).toHaveCSS('direction', 'ltr');
+    expect(await content.locator('pre code').textContent()).toBe(code);
+    const region = content.getByRole('region', {name: locale === 'ar' ? 'جدول قابل للتمرير' : 'Scrollable table'});
+    await expect(region.getByRole('columnheader')).toHaveCount(4);
+    await expect(region.getByRole('row')).toHaveCount(3);
+    await expect(region.getByRole('table')).toHaveCSS('direction', direction);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.emulateMedia({colorScheme: theme});
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({width, height: 900});
+        await region.scrollIntoViewIfNeeded();
+        await region.focus();
+        await expect(region).toBeFocused();
+        expect(await region.evaluate((node) => node.clientWidth <= node.parentElement!.clientWidth)).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await expect(region.getByRole('columnheader').first()).toHaveCSS('font-weight', '700');
+        await expect(content.getByRole('separator')).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+        if (width === 390) {
+          expect(await region.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+          await page.keyboard.press(locale === 'ar' ? 'ArrowLeft' : 'ArrowRight');
+          await expect.poll(() => region.evaluate((node) => Math.abs(node.scrollLeft))).toBeGreaterThan(0);
+        }
+        await page.screenshot({path: testInfo.outputPath(`rich-${theme}-${width}.png`)});
+      }
+    }
+  });
+
   test(`${locale}: historical math, arrows and emojis preserve prose direction, code and bubble alignment`, async ({page}) => {
     const formula = String.raw`$x^2 + y^2 = z^2$`;
     const arrow = String.raw`$\rightarrow$`;
@@ -125,7 +184,7 @@ for (const locale of ['en', 'ar']) {
     await expect(content.locator('em')).toHaveText('الفكرة');
     await expect(content.locator('p code')).toHaveText('Builder<T>');
     await expect(content.locator('p code')).toHaveCSS('direction', 'ltr');
-    await expect(content.locator('ul > li')).toHaveCount(2);
+    await expect(content.locator('ul:not(.contains-task-list) > li')).toHaveCount(2);
     await expect(content.locator('ol > li')).toHaveCount(2);
     await expect(content.locator('pre')).toHaveCSS('direction', 'ltr');
     await expect(content.locator('pre')).toHaveCSS('white-space', 'pre');
@@ -177,13 +236,16 @@ for (const locale of ['en', 'ar']) {
     await expect(reply.locator('strong')).toHaveText('Builder Design Pattern');
     await expect(reply.locator('pre code')).toHaveText(code, {timeout: 15000});
     await expect(reply.locator('pre')).toHaveCSS('direction', 'ltr');
-    const final = '```\n\nA&#x20;B &amp; &lt;b&gt;';
+    const final = '```' + gfm + '\n\nA&#x20;B &amp; &lt;b&gt;';
     expect(first + second + final).toBe(markdown);
     await push(final);
     await page.evaluate(() => (window as Window & {testChatStream?: ReadableStreamDefaultController<Uint8Array>}).testChatStream!.close());
     await expect(page.locator('#message-content')).toBeEnabled({timeout: 15000});
     expect(await reply.locator('pre code').textContent()).toBe(code);
     await expect(reply.locator('p').last()).toHaveText('A B & <b>');
+    await expect(reply.getByRole('table')).toHaveCount(1);
+    await expect(reply.getByRole('checkbox')).toHaveCount(2);
+    await expect(reply.locator('del')).toHaveText('قديم');
     const rendered = await reply.innerHTML();
     await expect(page.locator('.user-message .message-content')).toHaveCSS('direction', 'ltr');
     await expect(page.locator('.user-message strong').last()).toHaveText('Builder');

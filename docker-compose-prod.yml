@@ -14,7 +14,7 @@ services:
       agent:
         condition: service_started
       rag:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -36,6 +36,16 @@ services:
     container_name: priora-rag
     env_file:
       - ./rag-service/.env.docker
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health', timeout=5)"
+      interval: 10s
+      timeout: 6s
+      retries: 10
+      start_period: 120s
 
   frontend:
     build:

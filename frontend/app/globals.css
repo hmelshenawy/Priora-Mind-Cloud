@@ -486,15 +486,15 @@ textarea {
 
 .message-list p {
   margin: 0;
-  white-space: pre-wrap;
 }
 
 .message-content {
   overflow-wrap: anywhere;
+  line-height: 1.75;
 }
 
-.message-content > * + * {
-  margin-top: 0.75em;
+.message-content :is(p, ul, ol, blockquote, pre, .message-table) {
+  margin-block: 0.85em;
 }
 
 .message-content ul,
@@ -510,19 +510,118 @@ textarea {
   list-style-type: decimal;
 }
 
+.message-content li + li {
+  margin-block-start: 0.35em;
+}
+
+.message-content li > :is(ul, ol, p) {
+  margin-block: 0.35em;
+}
+
+.message-content ul ul {
+  list-style-type: circle;
+}
+
+.message-content ul ul ul {
+  list-style-type: square;
+}
+
+.message-content .task-list-item {
+  list-style-type: none;
+}
+
+.message-content .task-list-item > input {
+  margin-inline: -1.35em 0.5em;
+  vertical-align: baseline;
+  opacity: 1;
+}
+
 .message-content :is(h1, h2, h3, h4, h5, h6) {
+  margin-block: 1.35em 0.5em;
+  line-height: 1.5;
   font-weight: 700;
+}
+
+.message-content h1 { font-size: 1.35em; }
+.message-content h2 { font-size: 1.2em; }
+.message-content h3 { font-size: 1.1em; }
+.message-content h4 { font-size: 1em; }
+.message-content h5 { font-size: 0.95em; }
+.message-content h6 { font-size: 0.9em; }
+
+.message-content hr {
+  margin-block: 1.5em;
+  border: 0;
+  border-block-start: 1px solid hsl(var(--border));
+}
+
+.message-content blockquote {
+  border-inline-start: 3px solid hsl(var(--border));
+  padding-inline-start: 1em;
 }
 
 .message-content pre {
   overflow-x: auto;
   white-space: pre;
   text-align: left;
+  padding: 0.85em 1em;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.65em;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 0.9em;
+  line-height: 1.6;
 }
 
 .message-content code {
   unicode-bidi: isolate;
 }
+
+.message-content :not(pre) > code {
+  padding: 0.15em 0.35em;
+  border-radius: 0.3em;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font-size: 0.9em;
+}
+
+.message-table {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.65em;
+}
+
+.message-table:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.message-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+
+.message-table :is(th, td) {
+  min-width: 8rem;
+  padding: 0.65em 0.85em;
+  text-align: start;
+  vertical-align: top;
+  border-block-end: 1px solid hsl(var(--border));
+}
+
+.message-table th {
+  font-weight: 700;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.message-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.message-content > :first-child { margin-block-start: 0; }
+.message-content > :last-child { margin-block-end: 0; }
 
 .message-content :is(.katex, .katex-display, .katex-error) {
   unicode-bidi: isolate;

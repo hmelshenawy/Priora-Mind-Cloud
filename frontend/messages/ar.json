@@ -169,6 +169,9 @@
     "composerLabel": "الرسالة",
     "composerPlaceholder": "اكتب رسالة...",
     "send": "إرسال",
+    "tableLabel": "جدول قابل للتمرير",
+    "completedTask": "مهمة مكتملة",
+    "incompleteTask": "مهمة غير مكتملة",
     "sending": "جارٍ الإرسال...",
     "messageValidation": "أدخل رسالة قبل الإرسال.",
     "sendError": "تعذر إرسال الرسالة. حاول مرة أخرى."

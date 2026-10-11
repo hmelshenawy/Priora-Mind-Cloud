@@ -169,6 +169,9 @@
     "composerLabel": "Message",
     "composerPlaceholder": "Write a message...",
     "send": "Send",
+    "tableLabel": "Scrollable table",
+    "completedTask": "Completed task",
+    "incompleteTask": "Incomplete task",
     "sending": "Sending...",
     "messageValidation": "Enter a message before sending.",
     "sendError": "The message could not be sent. Please try again."
