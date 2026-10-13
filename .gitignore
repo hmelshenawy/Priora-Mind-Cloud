@@ -20,3 +20,6 @@ Thumbs.db
 .idea/
 __pycache__/
 *.pyc
+
+agent-service/generated_pdfs/
+agent-service/src/agentcore/tools/__pycache__/
