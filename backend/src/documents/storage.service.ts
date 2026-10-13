@@ -39,4 +39,18 @@ export class StorageService {
         }
         return result
     }
+
+    async getSignedUrl(storageKey: string): Promise<string> {
+        const { data, error } = await this.supabase.storage
+            .from(this.bucket)
+            .createSignedUrl(storageKey, 60 * 60 * 24* 10);
+
+        if (error || !data?.signedUrl) {
+            throw new BadRequestException(
+                "Failed to generate download URL"
+            );
+        }
+
+        return data.signedUrl;
+    }
 }
