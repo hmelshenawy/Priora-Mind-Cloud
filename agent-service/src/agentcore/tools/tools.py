@@ -1,39 +1,27 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
 import requests
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 available_tools= []
 tools_registery= {}
 
-def getTime(location: str) -> str:
-    """Get the current time for a supported location."""
+def getDateTime(timezone:str = "UTC") -> str:
+    """Get the current date and time in the user's local timezone."""
 
-    timezones = {
-        "dubai": "Asia/Dubai",
-        "cairo": "Africa/Cairo",
-        "baku": "Asia/Baku",
-        "albania": "Europe/Tirane",
-    }
+    try:
+        now = datetime.now(ZoneInfo(timezone))
 
-    location_key = location.lower().strip()
+        return now.isoformat(timespec="seconds")
 
-    timezone = timezones.get(location_key)
-
-    if not timezone:
-        return f"Timezone for {location} is not supported"
-
-    current_time = datetime.now(
-        ZoneInfo(timezone)
-    ).strftime("%I:%M %p")
-
-    return current_time
+    except ZoneInfoNotFoundError:
+        return "Invalid user timezone"
 
 
-available_tools.append(getTime)
-tools_registery[getTime.__name__] = getTime
+available_tools.append(getDateTime)
+tools_registery[getDateTime.__name__] = getDateTime
 
 def getWeather(location: str):
-
+    """Get the current weather conditions for a location."""
     response = requests.get(f"https://wttr.in/{location}",
                              params={"format": "j1"},
                         timeout=10,

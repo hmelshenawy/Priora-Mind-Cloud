@@ -6,7 +6,10 @@ import asyncio
 from agentcore.workflows.chat.workflow import ChatWorkflow
 from abc import ABC, abstractmethod
 import inspect
+import logging
 
+
+logger = logging.getLogger(__name__)
 # -----------------------------------------------
 # PARENT BASE CLASS WITH ABSTRACT METHODS
 class BaseAgent(ABC):
@@ -252,7 +255,7 @@ class Agent(BaseAgent):
             "role": "user",
             "content": user_message
         })
-
+        logger.info("context: %s", messages)
         return messages
 
     

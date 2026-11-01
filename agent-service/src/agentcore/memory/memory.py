@@ -58,8 +58,8 @@ class UserProfileMemory(Memory):
         }
     ]
 
-        response = await asyncio.create_task(self.llm.chat( messages, MemoryResponse.model_json_schema()))
-        response = self.response_normalize(response.message.content)
+        response = await asyncio.create_task(self.llm.structured_chat( messages, MemoryResponse))
+        # response = self.response_normalize(response.message.content)
         data = response.memories
         await self.save(data)
         return data
@@ -152,11 +152,11 @@ class EventMemory(Memory):
         print("EXTRACTING EVENTS")
         messages = self.input_builder(user_message, chat_history)
         print(messages)
-        response =await self.llm.chat(messages, EventResponse.model_json_schema())
-        events = self.response_normalize(response.message.content, EventResponse)
+        events =await self.llm.structured_chat(messages, EventResponse)
+        # events = self.response_normalize(response.message.content, EventResponse)
         # print("------------------", events)
-        if not events:
-            return events
+        if not events.events:
+            return []
         events =await self.get_salience(events)
 
         events = [
@@ -179,12 +179,12 @@ class EventMemory(Memory):
         messages = [{
             "role":"system", "content": EVENT_SALIENCE_PROMPT
         },
-        {"role":"user", "content": f"""<EVENT_RESPONSE>{events}</EVENT_RESPONSE> """}
+        {"role":"user", "content": f"""<EVENT_RESPONSE>{events.model_dump_json()}</EVENT_RESPONSE> """}
         ]
 
-        response =await self.llm.chat(messages, SalienceResponse.model_json_schema())
-        response = response.message.content
-        response = self.response_normalize(response, SalienceResponse)
+        response =await self.llm.structured_chat(messages, SalienceResponse)
+        # response = response.message.content
+        # response = self.response_normalize(response, SalienceResponse)
 
         if len(response.scores) != len(events.events):
             raise ValueError("Salience scores count mismatch")
@@ -235,23 +235,34 @@ class EventMemory(Memory):
         return vector.json()["vectors"][0]
 
     async def save(self, events: list[EventItem]):
-        url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/event"
-        headers = {
-        "Authorization": f"Bearer {access_token.get()}",
-        'x-mindspace-id': mindSpaceId.get(),
-        }
         if not events:
             return
-        for event in events:
-            print(f"SAVING EVENTS IN PROGRESS")
-            print(f"SAVE EVENT NUMBER: {events.index(event)}")
-            payload = event.model_dump(mode = "json")
-            response = await asyncio.to_thread(requests.post,
-                                               url, 
-                                               json=payload,
-                                               headers=headers)
-            print(f"SAVE RESPONSE STATUS", response.json())
+
+        url = f"{Configs.BACKEND_SERVICE_URL}/memory/event"
+
+        headers = {
+            "Authorization": f"Bearer {access_token.get()}",
+            "x-mindspace-id": mindSpaceId.get(),
+        }
+
+        for index, event in enumerate(events, start=1):
+            payload = event.model_dump(mode="json")
+
+            response = await asyncio.to_thread(
+                requests.post,
+                url,
+                json=payload,
+                headers=headers,
+                timeout=15,
+            )
+
+            if response.status_code == 409:
+                print(f"Event {index} already exists, skipping: {event.summary}")
+                continue
+
             response.raise_for_status()
+
+            print(f"Event {index} saved: {event.summary}")
 
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/event/search"

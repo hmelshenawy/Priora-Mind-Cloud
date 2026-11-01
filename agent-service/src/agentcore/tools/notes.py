@@ -8,7 +8,18 @@ url = Configs.BACKEND_SERVICE_URL+"/notes"
 # accessToken = Configs.ACCESS_TOKEN
 
 def createNote( title: str,content: str):
+    """
+    Create a new note in the user's current MindSpace.
 
+    Preserve the user's title and content exactly as provided.
+
+    Args:
+        title: The exact note title provided by the user.
+        content: The exact note content provided by the user.
+
+    Returns:
+        Dictionary containing the operation status and API response.
+    """
 
     response = requests.post(url= url, json={
         "mindSpaceId": mindSpaceId.get(),
@@ -63,8 +74,15 @@ available_tools.append(create_note_tool)
 
 
 def getAllNotes():
-   
+    """
+    Retrieve all notes from the user's current MindSpace.
 
+    Use this tool when the user asks to view, list,
+    or retrieve their saved notes.
+
+    Returns:
+        Dictionary containing the operation status and saved notes.
+    """
     response = requests.get(url= url, params={
             "mindSpaceId": mindSpaceId.get(),
         }, headers={

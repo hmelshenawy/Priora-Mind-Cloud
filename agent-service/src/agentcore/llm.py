@@ -48,4 +48,16 @@ class OllamaClient(LlmClient):
         messages.append(response.message)
         
         return  response
-                    
+
+
+    async def structured_chat(self, messages, schema):
+        response = await self.client.chat(
+            model=self.model_name,
+            messages=messages,
+            format=schema.model_json_schema(),
+            think=False,
+        )
+
+        return schema.model_validate_json(
+            response.message.content
+        )

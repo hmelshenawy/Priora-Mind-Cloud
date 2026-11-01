@@ -34,7 +34,7 @@ def searchKnowledge( query: str) -> dict:
         }
 
     return response.json()
-
+    
 
 # available_tools.append(searchKnowledge)
 tools_registery[searchKnowledge.__name__] = searchKnowledge

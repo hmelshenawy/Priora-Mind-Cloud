@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from agentcore.config import Configs
 from agentcore.schemas import ChatRequest
-from agentcore.agent import Agent, OrchAgent
+# from agentcore.agent import Agent, OrchAgent
+from agentcore.langchain_agent.agent import Agent
 from agentcore.skills.skill_loader import UserSkillProvider, BuildinSkillProvider , SkillManager
 from agentcore.tools.tools import tools_registery, available_tools
 from agentcore.context import access_token, mindSpaceId
@@ -24,8 +25,8 @@ skill_manager = SkillManager(
     tools_registery
 )
 
-agent = Agent(Configs.OLLAMA_MODEL_NAME,tools= available_tools,tool_registry= tools_registery,skills= skill_manager,steps= 10)
-
+# agent = Agent(Configs.OLLAMA_MODEL_NAME,tools= available_tools,tool_registry= tools_registery,skills= skill_manager,steps= 10)
+agent = Agent(Configs.OLLAMA_MODEL_NAME, skills= skill_manager)
 
 
 @app.get("/health")

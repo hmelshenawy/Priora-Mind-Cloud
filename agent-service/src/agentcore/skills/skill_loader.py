@@ -4,6 +4,8 @@ from agentcore.context import  access_token
 from agentcore.config import Configs
 import requests
 
+from langchain_core.tools import tool
+
 class SkillProvider(ABC):
     def __init__(self):
         super().__init__()
@@ -20,9 +22,6 @@ class SkillProvider(ABC):
 class BuildinSkillProvider(SkillProvider):
     def __init__(self):
         self.skills_path = Path(__file__).parent
-        # self.tool_registry = tool_registry
-        # self.tools = tools
-        # self.register_tool()
 
     def list(self):
         skills = []
@@ -63,13 +62,6 @@ class BuildinSkillProvider(SkillProvider):
             return f"Skill '{name}' not found"
 
         return skill_file.read_text(encoding="utf-8")
-
-
-    # def register_tool(self):
-    #     self.tools.append(self.load_skill)
-    #     self.tool_registry[self.load_skill.__name__] = self.load_skill
-    #     print("SKILLS TOOL ADDED SUCCESSFULLY")
-
 
 
 class UserSkillProvider(SkillProvider):
@@ -123,7 +115,25 @@ class SkillManager:
         tools.append(self.load_skill)
         registry["load_skill"] = self.load_skill
 
+    # @tool
     def load_skill(self, identifier):
+        """
+    Load the full instructions of an available skill.
+
+    Use this tool when a skill's description matches the user's request.
+    The skill must be loaded before following its instructions.
+
+    Supports built-in and user-created skills.
+    Use the exact skill ID provided in the available skills list.
+
+    Args:
+        identifier: Exact skill identifier, including its source prefix.
+            Examples: "builtin:planning" or "user:<skill-uuid>".
+
+    Returns:
+        The skill instructions, or an error if the skill is unavailable.
+    """
+
         source, skill_id = identifier.split(":", 1)
 
         if source == "builtin":

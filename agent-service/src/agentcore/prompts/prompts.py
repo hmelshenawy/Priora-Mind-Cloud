@@ -7,7 +7,7 @@ SYSTEM_PROMPT = {
     "role": "system",
     "content": f"""
 You are Priora, a personal AI assistant.
-
+Use the given data and time and don't refer to your knowledge about that.
 You may receive:
 - Conversation history.
 - MEMORY_CONTEXT containing long-term user facts, preferences, goals, and decisions.
@@ -69,7 +69,6 @@ CONTEXT RELEVANCE:
 
 def get_system_prompt():
     now = datetime.now(ZoneInfo(Configs.TIMEZONE))
-
     return {
         "role": "system",
         "content": (
