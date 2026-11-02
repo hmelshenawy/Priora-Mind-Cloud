@@ -1,4 +1,6 @@
+from agentcore.agent import BaseAgent
 from langchain.agents import create_agent
+from langsmith import traceable
 from langchain.agents.middleware import ToolCallLimitMiddleware, ModelCallLimitMiddleware
 from agentcore.prompts.prompts import get_system_prompt
 from agentcore.langchain_agent.llm import LangChainOllama
@@ -12,7 +14,7 @@ from langchain_core.tools import tool
 logger = logging.getLogger(__name__)
 
 
-class Agent:
+class Agent(BaseAgent):
 
     def __init__(self, llm_model: str, skills: SkillManager):
 
@@ -66,6 +68,8 @@ class Agent:
         return result["messages"][-1].content
 
 
+    @traceable(
+    name="priora-chat",run_type="chain",reduce_fn=lambda chunks: "".join(chunks))
     async def stream(self, user_message: str, history = None):
         history = history or []
         memories = await self.search_memories(user_message)
@@ -108,7 +112,6 @@ class Agent:
             # Ignore tool calls and other non-text content
             if chunk.text:
                 yield chunk.text
-
 
 
     def _build_messages(self, user_message, history, memories):
@@ -165,6 +168,7 @@ class Agent:
         return messages
 
 
+    @traceable(name="memory-retrieval",run_type="retriever",)
     async def search_memories(self, user_message):
         memories =await self.memory.retrieve(user_message) or []
         events = await self.events_memory.retrieve(user_message) or []
@@ -198,3 +202,5 @@ class Agent:
             }
 
 
+    def call_tool(self):
+        return

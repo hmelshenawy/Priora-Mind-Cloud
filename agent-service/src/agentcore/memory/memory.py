@@ -7,7 +7,7 @@ from agentcore.prompts import MEMORY_EXTRACTION_PROMPT, EVENT_EXTRACTION_PROMPT,
 import requests
 from agentcore.context import access_token, mindSpaceId
 import json
-
+from langsmith import traceable
 
 class Memory(ABC):
     def __init__(self):
@@ -45,6 +45,8 @@ class UserProfileMemory(Memory):
         self.llm = llm
 
 
+
+    @traceable(name="memory-extraction")
     async def gather(self, user_message: str):
         print("GATHERING MEMORIES!!")
         messages = [
@@ -65,12 +67,14 @@ class UserProfileMemory(Memory):
         return data
 
 
+
     async def embed(self, text: str):
         print("EMBEDDING MEMORY REQUEST")
         url = f"{Configs.RAG_SERVICE_URL}"+"/v1/embed"
         vector = await asyncio.to_thread(requests.post ,url, json={"texts": [text]})
 
         return vector.json()["vectors"][0]
+
 
 
     async def save(self, memories):
@@ -102,6 +106,7 @@ class UserProfileMemory(Memory):
             response.raise_for_status()
 
 
+
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/search"
 
@@ -120,6 +125,8 @@ class UserProfileMemory(Memory):
         return response.json()
 
 
+
+    @traceable(name="profile-memory-retrieval", run_type="retriever")
     async def retrieve (self, userMessage):
         print("RETREIVE MEMORY")
         vector = await self.embed(userMessage)
@@ -127,6 +134,7 @@ class UserProfileMemory(Memory):
         print(f"RETREIVED MEMORIES {len(memories)}")
 
         return memories
+
 
 
     def response_normalize(self, content):
@@ -148,6 +156,8 @@ class EventMemory(Memory):
         self.llm = llm
 
 
+
+    @traceable(name="event-extraction")
     async def gather(self, user_message: str, chat_history: list[str], salience_threshold: float= 0.40):
         print("EXTRACTING EVENTS")
         messages = self.input_builder(user_message, chat_history)
@@ -175,6 +185,7 @@ class EventMemory(Memory):
         return events
 
 
+
     async def get_salience(self, events: EventResponse):
         messages = [{
             "role":"system", "content": EVENT_SALIENCE_PROMPT
@@ -194,6 +205,7 @@ class EventMemory(Memory):
 
         return events
 
+
     
     def response_normalize(self, content, response: any):
             content = content.strip()
@@ -205,6 +217,7 @@ class EventMemory(Memory):
     
             result = response.model_validate_json(content)
             return result
+
 
 
     def build_embedding_text(self, event: EventItem) -> str:
@@ -227,12 +240,16 @@ class EventMemory(Memory):
             f"Concepts: {concepts}"
         )
 
+
+
     async def embed(self, text: str):
         print("EMBEDDING MEMORY REQUEST")
         url = f"{Configs.RAG_SERVICE_URL}"+"/v1/embed"
         vector = await asyncio.to_thread(requests.post ,url, json={"texts": [text]})
 
         return vector.json()["vectors"][0]
+
+
 
     async def save(self, events: list[EventItem]):
         if not events:
@@ -264,6 +281,8 @@ class EventMemory(Memory):
 
             print(f"Event {index} saved: {event.summary}")
 
+
+
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/event/search"
 
@@ -282,6 +301,8 @@ class EventMemory(Memory):
         return response.json()
 
 
+
+    @traceable(name="event-retrieval", run_type="retriever")
     async def retrieve(self, userMessage: str):
         print("RETREIVE EVENT")
         vector = await self.embed(userMessage)
@@ -295,6 +316,8 @@ class EventMemory(Memory):
         print(f"RELEVANT EVENTS: {len(relevant_events)}")
 
         return relevant_events
+
+
 
     def input_builder(self, user_message:str, chat_history:list[str]):
         from datetime import datetime
