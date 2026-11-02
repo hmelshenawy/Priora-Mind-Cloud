@@ -68,8 +68,7 @@ class Agent(BaseAgent):
         return result["messages"][-1].content
 
 
-    @traceable(
-    name="priora-chat",run_type="chain",reduce_fn=lambda chunks: "".join(chunks))
+    @traceable(name="priora-chat",run_type="chain",reduce_fn=lambda chunks: "".join(chunks))
     async def stream(self, user_message: str, history = None):
         history = history or []
         memories = await self.search_memories(user_message)

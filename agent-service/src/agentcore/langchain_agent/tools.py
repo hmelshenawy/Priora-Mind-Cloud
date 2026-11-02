@@ -14,8 +14,6 @@ from agentcore.tools.web_search import webSearch
 from agentcore.tools.tasks import createTask, getAllTasks
 from agentcore.tools.notes import createNote, getAllNotes
 
-from agentcore.skills.skill_loader import SkillManager
-
 langchain_tools = [
     tool(getDateTime),
     tool(getWeather),

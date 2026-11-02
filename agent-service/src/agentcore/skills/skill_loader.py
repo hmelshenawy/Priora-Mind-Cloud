@@ -126,6 +126,14 @@ class SkillManager:
     Supports built-in and user-created skills.
     Use the exact skill ID provided in the available skills list.
 
+        The identifier MUST include its source prefix:
+    - builtin:skill_name
+    - user:skill_name
+
+    Example: user:travel_planner
+
+    Do not pass a skill name without its source prefix.
+
     Args:
         identifier: Exact skill identifier, including its source prefix.
             Examples: "builtin:planning" or "user:<skill-uuid>".
