@@ -1,0 +1,73 @@
+{
+  "dataset_name": "priora-rag-cbt-transdiagnostic-v1",
+  "document": {
+    "title": "CBT at the Crossroads: The Rise of Transdiagnostic Treatments",
+    "source_url": "https://link.springer.com/content/pdf/10.1007/s41811-020-00095-2.pdf",
+    "pdf_pages": 28,
+    "source_id": null,
+    "file_name": "s41811-020-00095-2.pdf",
+    "notes": "Questions and reference answers are derived from the original published article, not Qdrant retrieval. Populate source_id after uploading to the test MindSpace. pdf_page uses 1-based PDF page index, not journal page number."
+  },
+  "examples": [
+    {
+      "id": "TCBT-01",
+      "question": "According to the uploaded article 'CBT at the Crossroads: The Rise of Transdiagnostic Treatments', what distinction do the authors draw between unified and individualized transdiagnostic treatments? Cite the paper.",
+      "reference_answer": "Unified treatments use a broadly applicable intervention protocol for different disorders without tailoring it to each person, whereas individualized transdiagnostic treatments adapt the treatment to a person's specific presentation, for example by selecting different modules.",
+      "reference_pages": [1, 5]
+    },
+    {
+      "id": "TCBT-02",
+      "question": "In the uploaded 'CBT at the Crossroads' paper, which three shared processes are given as examples from Harvey and colleagues' account of transdiagnostic processes? Cite the relevant page.",
+      "reference_answer": "The authors list attentional biases, recurrent negative thinking, and avoidance behavior as examples among the transdiagnostic processes identified by Harvey and colleagues.",
+      "reference_pages": [2]
+    },
+    {
+      "id": "TCBT-03",
+      "question": "According to the uploaded paper, what practical advantages might transdiagnostic approaches offer compared with disorder-specific protocols? Cite the paper.",
+      "reference_answer": "Potential advantages include reducing treatment time and cost, simplifying training and clinical implementation, supporting dissemination of evidence-based treatments, and addressing multiple relevant processes and comorbidities rather than focusing on one diagnosis.",
+      "reference_pages": [3]
+    },
+    {
+      "id": "TCBT-04",
+      "question": "Using only the uploaded 'CBT at the Crossroads' article, identify the three core principles of the Unified Protocol for Emotional Disorders and cite where they appear.",
+      "reference_answer": "The three principles are increasing mindful awareness of emotions, increasing cognitive flexibility, and reducing emotion avoidance.",
+      "reference_pages": [9]
+    },
+    {
+      "id": "TCBT-05",
+      "question": "In the uploaded paper's discussion of transdiagnostic CBT for eating disorders, what four maintaining processes do the authors attribute to Fairburn and colleagues? Cite the section.",
+      "reference_answer": "Perfectionism, low self-esteem, mood intolerance, and interpersonal difficulties.",
+      "reference_pages": [9]
+    },
+    {
+      "id": "TCBT-06",
+      "question": "According to the uploaded article, how many sessions does Norton's Group Anxiety Treatment Protocol contain, and what traditional CBT components does it use? Cite the article.",
+      "reference_answer": "The protocol consists of 12 group sessions and covers psychoeducation, cognitive restructuring, exposure exercises, and relapse prevention; it also addresses beliefs related to uncontrollability, unpredictability, and threat.",
+      "reference_pages": [9, 10]
+    },
+    {
+      "id": "TCBT-07",
+      "question": "How does the case-formulation approach described in the uploaded paper customize CBT, and what role does progress monitoring play? Cite the passage.",
+      "reference_answer": "The clinician develops hypotheses about mechanisms causing and maintaining the particular patient's problems, selects interventions targeting those mechanisms, and monitors progress at each session to evaluate effectiveness and test the hypotheses.",
+      "reference_pages": [12]
+    },
+    {
+      "id": "TCBT-08",
+      "question": "In the uploaded article, how do the authors contrast clinician-selected modules with data-driven module selection for individualized CBT? Cite the paper.",
+      "reference_answer": "Clinician-selected modular treatment relies on clinical judgment, assessment, interviews, or preferences, while data-driven selection relies on questionnaire cutoff rules or more advanced algorithms to tailor content to an individual.",
+      "reference_pages": [13, 14]
+    },
+    {
+      "id": "TCBT-09",
+      "question": "What limitations of relying only on diagnosis to choose CBT modules do the authors discuss in the uploaded article? Give examples and cite the paper.",
+      "reference_answer": "The authors argue diagnosis-only selection is too simplistic given frequent comorbidity and variation within diagnoses. They suggest matching modules to maintaining processes, such as behavioral activation for anhedonia and exposure for situational avoidance, while noting that research is still needed to validate process-based selection.",
+      "reference_pages": [18]
+    },
+    {
+      "id": "TCBT-10",
+      "question": "According to the conclusion of my uploaded 'CBT at the Crossroads' article, what methodological limitations constrain evidence for transdiagnostic CBT, and what future direction do the authors propose? Cite the conclusion.",
+      "reference_answer": "Limitations include small study samples and inconsistent definitions and comparison groups. The authors propose combining individualized interventions with technology and real-time feedback, tailoring treatment to patients' problems and strengths regardless of diagnosis.",
+      "reference_pages": [19]
+    }
+  ]
+}
