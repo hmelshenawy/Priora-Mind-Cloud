@@ -14,21 +14,28 @@ export class StorageService {
     }
 
     async upload(file: Express.Multer.File, storageKey: string) {
-        console.log("upload multer file", file)
-        console.log("upload multer storage", storageKey)
+    const { data, error } = await this.supabase.storage
+        .from(this.bucket)
+        .upload(storageKey, file.buffer, {
+            contentType: file.mimetype,
+        });
 
-        const result = await this.supabase.storage
-            .from(this.bucket)
-            .upload(storageKey, file.buffer, {
-                contentType: file.mimetype,
-            });
+    if (error) {
+        console.error("Supabase Storage Error:", {
+            name: error.name,
+            message: error.message,
+            statusCode: error.statusCode,
+        });
 
-        if (result.error || !result.data?.path) {
-            throw new BadRequestException("Failed !!")
-        }
-
-        return result.data.path
+        throw new BadRequestException("Storage upload failed");
     }
+
+    if (!data?.path) {
+        throw new BadRequestException("Storage returned no file path");
+    }
+
+    return data.path;
+}
 
     async delete(storageKey: string) {
         const result = await this.supabase.storage

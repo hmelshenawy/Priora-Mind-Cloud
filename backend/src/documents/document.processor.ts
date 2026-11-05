@@ -21,7 +21,7 @@ export class DocumentProcessor extends WorkerHost {
       throw new Error(`Unknown job: ${job.name}`);
     }
 
-    const { documentId, storageKey, mindSpaceId } = job.data;
+    const { documentId, storageKey, mindSpaceId, fileName } = job.data;
 
     this.logger.log(`Processing document: ${documentId}`);
 
@@ -33,7 +33,7 @@ export class DocumentProcessor extends WorkerHost {
 
       this.logger.log(`Calling RAG for document: ${documentId}`);
 
-      await this.rag.ingest(storageKey, documentId, mindSpaceId);
+      await this.rag.ingest(storageKey, documentId, mindSpaceId, fileName);
 
       await this.prisma.document.update({
         where: { id: documentId },

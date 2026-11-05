@@ -23,6 +23,7 @@ async def health():
 @app.post("/v1/ingest")
 async def ingest(request: Request,):
     payload = await request.json()
+    file_name = payload["fileName"]
     key = payload["storageKey"]
     source_id = payload["source_id"]
     mindSpaceId = payload["mindSpaceId"]
@@ -44,7 +45,7 @@ async def ingest(request: Request,):
     
     qdClient.ensure_collection(QDRANT_COLLECTION, EMBEDDING_DIM)
 
-    points = qdClient.map_chunks_to_points(mindSpaceId= mindSpaceId, chunks= chunks, vectors= embeds, embedding_dimension= EMBEDDING_DIM, embedding_model= EMBEDDING_MODEL, environment=ENV)
+    points = qdClient.map_chunks_to_points(mindSpaceId= mindSpaceId, chunks= chunks, vectors= embeds, embedding_dimension= EMBEDDING_DIM, embedding_model= EMBEDDING_MODEL, environment=ENV, file_name = file_name)
     qdClient.upsert(collection_name=QDRANT_COLLECTION,points= points )
 
     return {

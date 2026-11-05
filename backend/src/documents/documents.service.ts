@@ -54,6 +54,7 @@ export class DocumentsService {
                     documentId: documentMetaData.id,
                     storageKey: result,
                     mindSpaceId,
+                    fileName: documentMetaData.fileName,
                 },
                 {
                     jobId: documentMetaData.id,

@@ -8,7 +8,7 @@ export class RagService {
     constructor(
         private readonly configs: ConfigService,
     ){}
-    async ingest(storageKey: string, source_id: string, mindSpaceId: string) {
+    async ingest(storageKey: string, source_id: string, mindSpaceId: string, fileName: string) {
         const baseUrl= this.configs.getOrThrow("RAG_URL")
         const url = baseUrl+"/v1/ingest"
         try {
@@ -19,6 +19,7 @@ export class RagService {
                     storageKey,
                     source_id,
                     mindSpaceId,
+                    fileName
                 }),
                 signal: AbortSignal.timeout(600000)
             },

@@ -115,6 +115,7 @@ class QdClient:
     embedding_model: str,
     embedding_dimension: int,
     environment: str,
+    file_name: str
 ):
         """Map canonical chunks and same-length vectors to deterministic PointStruct values."""
     
@@ -133,11 +134,12 @@ class QdClient:
             payload.update(
                 {
                 "mindSpaceId": mindSpaceId,
+                "file_name": file_name,
                 "active": True,
                 "approved": True,
                 "embedding_model": embedding_model,
                 "embedding_dimension": embedding_dimension,
-                "environment": ENV,
+                "environment": environment,
                 "schema_version": 2,
             }
         )
