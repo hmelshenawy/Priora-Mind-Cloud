@@ -4,10 +4,13 @@ from enum import Enum
 from typing import Literal
 from datetime import datetime
 
+class ChatHistoryItem(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=10000)
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=10000)
-    history: list
+    history: list[ChatHistoryItem] = Field(max_length=50)
     accessToken: str
     mindSpaceId: UUID
 

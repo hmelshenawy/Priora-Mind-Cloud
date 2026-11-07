@@ -40,7 +40,7 @@ async def health():
 async def chat(body: ChatRequest):
     message = body.message
     token = body.accessToken
-    history = body.history
+    history = [item.model_dump() for item in body.history]
     mindSpace = str(body.mindSpaceId)
 
     
