@@ -5,13 +5,82 @@ from langchain.agents.middleware import ToolCallLimitMiddleware, ModelCallLimitM
 from agentcore.prompts.prompts import get_system_prompt
 from agentcore.langchain_agent.llm import LangChainOllama
 from agentcore.langchain_agent.tools import langchain_tools
-from agentcore.memory.memory import UserProfileMemory, EventMemory
+from agentcore.memory.memory import UserProfileMemory, EventMemory, RequestLogger, request_id
 from agentcore.skills.skill_loader import UserSkillProvider, BuildinSkillProvider, SkillManager
 import asyncio
 import logging
+from time import perf_counter
 from langchain_core.tools import tool
+from langchain_core.callbacks import AsyncCallbackHandler
 
-logger = logging.getLogger(__name__)
+logger = RequestLogger(logging.getLogger(__name__), {})
+
+
+class ExecutionLogs(AsyncCallbackHandler):
+    """Metadata-only stages: a returned tool result is not proof of success."""
+
+    def __init__(self, tool_names):
+        self.tool_names = frozenset(tool_names)
+        self.tool_runs = {}
+        self.model_runs = {}
+        self.step = 0
+        # Capture correlation once; callbacks may run in executor contexts.
+        self.logger = RequestLogger(logging.getLogger(__name__), {"request_id": request_id.get()})
+
+    async def on_chat_model_start(self, serialized, messages, **kwargs):
+        self.step += 1
+        self.model_runs[kwargs["run_id"]] = (self.step, perf_counter())
+        self.logger.debug("model.started stage=chat step=%d duration_ms=0 tool_call_count=0", self.step)
+
+    async def on_llm_end(self, response, **kwargs):
+        run = self.model_runs.pop(kwargs["run_id"], None)
+        if run is None:
+            return
+        step, started = run
+        count = sum(len(getattr(getattr(generation, "message", None), "tool_calls", []))
+                    for generations in response.generations for generation in generations)
+        self.logger.debug("model.completed stage=chat step=%d duration_ms=%d tool_call_count=%d",
+                          step, (perf_counter() - started) * 1000, count)
+
+    async def on_llm_error(self, error, **kwargs):
+        run = self.model_runs.pop(kwargs["run_id"], None)
+        if run is not None:
+            step, started = run
+            status = "cancelled" if isinstance(error, (asyncio.CancelledError, GeneratorExit)) else "failed"
+            self.logger.warning("model.failed step=%d status=%s duration_ms=%d error_code=model_execution_failed",
+                                step, status, (perf_counter() - started) * 1000)
+
+    async def on_tool_start(self, serialized, input_str, **kwargs):
+        name = (serialized or {}).get("name")
+        name = name if name in self.tool_names else "unknown"
+        self.tool_runs[kwargs["run_id"]] = (name, perf_counter())
+        self.logger.debug("tool.started tool=%s status=started duration_ms=0", name)
+
+    async def on_tool_end(self, output, **kwargs):
+        run = self.tool_runs.pop(kwargs["run_id"], None)
+        if run is None:
+            return
+        name, started = run
+        failed = getattr(output, "status", None) == "error"
+        self.logger.debug("tool.%s tool=%s status=%s duration_ms=%d",
+                          "failed" if failed else "completed", name,
+                          "failed" if failed else "returned", (perf_counter() - started) * 1000)
+
+    async def on_tool_error(self, error, **kwargs):
+        run = self.tool_runs.pop(kwargs["run_id"], None)
+        if run is not None:
+            name, started = run
+            status = "cancelled" if isinstance(error, (asyncio.CancelledError, GeneratorExit)) else "failed"
+            self.logger.warning("tool.failed tool=%s status=%s duration_ms=%d error_code=tool_execution_failed",
+                                name, status, (perf_counter() - started) * 1000)
+
+
+def observe_background(task):
+    # gather() logs a sanitized failure and still raises. Consume the detached
+    # task exception so asyncio does not print its potentially sensitive text.
+    if not task.cancelled():
+        task.exception()
+
 
 
 class Agent(BaseAgent):
@@ -24,19 +93,22 @@ class Agent(BaseAgent):
         @tool
         def load_skill(identifier: str) -> str:
             """Load instructions for an available skill using its exact identifier."""
-            return self.skills.load_skill(identifier)
+            started = perf_counter()
+            source = identifier.partition(":")[0]
+            source = source if source in ("builtin", "user") else "unknown"
+            status = "failure"
+            try:
+                result = self.skills.load_skill(identifier)
+                # Existing providers return these sentinels for missing skills.
+                missing = source == "builtin" and result == f"Skill '{identifier.partition(':')[2]}' not found"
+                if source != "unknown" and not missing:
+                    status = "success"
+                return result
+            finally:
+                logger.debug("skill.load.completed source=%s status=%s duration_ms=%d",
+                             source, status, (perf_counter() - started) * 1000)
 
         self.tools.append(load_skill)
-
-        logger.info(
-            "REGISTERED TOOLS: %s",
-            [t.name for t in self.tools]
-        )
-
-        logger.info(
-            "LOAD SKILL SCHEMA: %s",
-            load_skill.args
-        )
 
         self.agent = create_agent(
             model=self.llm.get_model(),
@@ -55,6 +127,7 @@ class Agent(BaseAgent):
 
         self.memory = UserProfileMemory(self.llm)
         self.events_memory = EventMemory(self.llm)
+        logger.info("agent.started tool_count=%d", len(self.tools))
         
 
     async def run(self, user_message: str):
@@ -63,7 +136,7 @@ class Agent(BaseAgent):
             "messages": [
                 {"role": "user", "content": user_message}
             ]
-        })
+        }, config={"callbacks": [ExecutionLogs(t.name for t in self.tools)]})
 
         return result["messages"][-1].content
 
@@ -74,34 +147,19 @@ class Agent(BaseAgent):
         memories = await self.search_memories(user_message)
         messages= self._build_messages(user_message, history, memories)
 
-        for i, message in enumerate(messages):
-            print(
-                f"MESSAGE {i}:",
-                "role =", message.get("role"),
-                "content_type =", type(message.get("content")),
-                "content =", repr(message.get("content"))[:500],
-            )
-
-        asyncio.create_task(self.memory.gather(user_message))
-        asyncio.create_task(self.events_memory.gather(user_message, history))
+        profile_task = asyncio.create_task(self.memory.gather(user_message))
+        profile_task.add_done_callback(observe_background)
+        event_task = asyncio.create_task(self.events_memory.gather(user_message, history))
+        event_task.add_done_callback(observe_background)
         async for chunk, metadata in self.agent.astream(
             {
                 "messages": messages
             },
             stream_mode="messages",
+            config={"callbacks": [ExecutionLogs(t.name for t in self.tools)]},
         ):
 
-            if getattr(chunk, "tool_call_chunks", None):
-                logger.debug(
-                    "TOOL CALL CHUNKS: %s",
-                    chunk.tool_call_chunks
-                )
-
             if chunk.type == "tool":
-                logger.info(
-                    "TOOL RESULT: %s",
-                    chunk.content
-                )
                 continue
 
             # Only stream messages generated by the agent model
@@ -163,7 +221,8 @@ class Agent(BaseAgent):
             "role": "user",
             "content": user_message
         })
-        logger.info("context: %s", messages)
+        logger.debug("context.ready history_count=%d message_count=%d builtin_skill_count=%d user_skill_count=%d",
+                     len(history), len(messages), len(builtin_skills), len(user_skills))
         return messages
 
 
@@ -171,8 +230,7 @@ class Agent(BaseAgent):
     async def search_memories(self, user_message):
         memories =await self.memory.retrieve(user_message) or []
         events = await self.events_memory.retrieve(user_message) or []
-        print("RETRIEVED EVENTS:", events)
-        print("RETRIEVED MEMORIES:", memories)
+        logger.debug("memory.context.ready profile_count=%d event_count=%d", len(memories), len(events))
         
         memory_context = "\n".join(
                     f"- [{memory['type']}] {memory['content']}"for memory in memories

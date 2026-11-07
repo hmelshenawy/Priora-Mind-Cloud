@@ -31,16 +31,6 @@ def getWeather(location: str):
     data = response.json()
     current = data["current_condition"][0]
 
-    print(
-        {
-        "location": location,
-        "temperature_c": current.get("temp_C"),
-        "feels_like_c": current.get("FeelsLikeC"),
-        "condition": current.get("weatherDesc", [{}])[0].get("value"),
-        "humidity": current.get("humidity"),
-        "wind_kmph": current.get("windspeedKmph"),
-    }
-    )
     return {
         "location": location,
         "temperature_c": current.get("temp_C"),

@@ -48,8 +48,7 @@ async def webFetch(url: str) -> str:
             f"Web fetch failed. HTTP status: {e.status_code}"
         )
 
-    except Exception as e:
-        print(f"Web fetch error: {e}")
+    except Exception:
         return "Web fetch failed."
 
 

@@ -55,7 +55,6 @@ class BuildinSkillProvider(SkillProvider):
                     "name": name,
                     "description": description
                 })
-        print("AVAILABLE SKILSS: ", skills)
         return skills
 
     def load_skill(self, name: str):
