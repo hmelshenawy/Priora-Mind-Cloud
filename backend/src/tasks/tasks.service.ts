@@ -1,3 +1,4 @@
+import { requestContext } from '../logging/request-logging';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -17,10 +18,12 @@ export class TasksService {
 
     const exist = await this.isExist(dto)
     if(exist){
+      const context = requestContext.getStore();
+      if (context) context.counts = { saved_count: 0 };
       return exist
     }
 
-    return this.prisma.task.create({
+    const result = await this.prisma.task.create({
       data: {
         mindSpaceId: dto.mindSpaceId,
         title: dto.title.trim(),
@@ -28,6 +31,9 @@ export class TasksService {
         executor: dto.executor,
       },
     });
+    const context = requestContext.getStore();
+    if (context) context.counts = { saved_count: 1 };
+    return result;
   }
 
   async findAll(mindSpaceId: string, userId: string) {
@@ -38,10 +44,13 @@ export class TasksService {
       throw new NotFoundException('MindSpace not found');
     }
 
-    return this.prisma.task.findMany({
+    const result = await this.prisma.task.findMany({
       where: { mindSpaceId },
       orderBy: { updatedAt: 'desc' },
     });
+    const context = requestContext.getStore();
+    if (context) context.counts = { result_count: result.length };
+    return result;
   }
 
   async findOne(id: string, userId: string) {
@@ -57,7 +66,7 @@ export class TasksService {
   async update(id: string, dto: UpdateTaskDto, userId: string) {
     await this.findOne(id, userId);
 
-    return this.prisma.task.update({
+    const result = await this.prisma.task.update({
       where: { id },
       data: {
         title: dto.title?.trim(),
@@ -66,12 +75,18 @@ export class TasksService {
         executor: dto.executor,
       },
     });
+    const context = requestContext.getStore();
+    if (context) context.counts = { saved_count: 1 };
+    return result;
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
 
-    return this.prisma.task.delete({ where: { id } });
+    const result = await this.prisma.task.delete({ where: { id } });
+    const context = requestContext.getStore();
+    if (context) context.counts = { saved_count: 1 };
+    return result;
   }
 
   async isExist(dto: CreateTaskDto){

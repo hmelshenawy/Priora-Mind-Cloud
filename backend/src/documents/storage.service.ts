@@ -1,3 +1,4 @@
+import { failure } from '../logging/request-logging';
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { SupabaseClient, createClient, } from "@supabase/supabase-js";
@@ -21,16 +22,13 @@ export class StorageService {
         });
 
     if (error) {
-        console.error("Supabase Storage Error:", {
-            name: error.name,
-            message: error.message,
-            statusCode: error.statusCode,
-        });
+        failure('storage_upload_failed', 'storage');
 
         throw new BadRequestException("Storage upload failed");
     }
 
     if (!data?.path) {
+        failure('storage_upload_failed', 'storage');
         throw new BadRequestException("Storage returned no file path");
     }
 
@@ -42,6 +40,7 @@ export class StorageService {
             .from(this.bucket).remove([storageKey])
 
         if (result.error) {
+            failure('storage_delete_failed', 'storage');
             throw new BadRequestException("Failed!!")
         }
         return result
@@ -53,6 +52,7 @@ export class StorageService {
             .createSignedUrl(storageKey, 60 * 60 * 24* 10);
 
         if (error || !data?.signedUrl) {
+            failure('storage_sign_failed', 'storage');
             throw new BadRequestException(
                 "Failed to generate download URL"
             );

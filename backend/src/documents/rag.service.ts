@@ -1,3 +1,4 @@
+import { failure, resolveRequestId } from '../logging/request-logging';
 import { randomUUID } from "node:crypto";
 import { BadRequestException, Injectable, RequestTimeoutException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -19,7 +20,7 @@ export class RagService {
                 headers: {
                     "Content-Type": "application/json",
                     "X-Internal-Service-Key": ragSecretKey,
-                    "X-Request-ID": requestId,
+                    "X-Request-ID": resolveRequestId(requestId),
                 },
                 body: JSON.stringify({
                     storageKey,
@@ -32,14 +33,17 @@ export class RagService {
             )
 
             if (!ingest.ok) {
+                failure('rag_http_failed', 'rag_ingest', ingest.status < 500 ? 'warn' : 'error', ingest.status);
                 throw new BadRequestException("RAG Failed!")
             }
             else return ingest.json()
 
         } catch (error) {
             if (error instanceof DOMException && error.name === "TimeoutError") {
+                failure('rag_timeout', 'rag_ingest', 'warn');
                 throw new RequestTimeoutException("RAG ingestion timed out")
             }
+            failure('rag_http_failed', 'rag_ingest');
             throw error
         }
     }

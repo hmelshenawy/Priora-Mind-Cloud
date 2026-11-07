@@ -142,6 +142,7 @@ class UserProfileMemory(Memory):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory"
 
         headers = {
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
         'x-mindspace-id': mindSpaceId.get(),
         }
@@ -171,6 +172,7 @@ class UserProfileMemory(Memory):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/search"
 
         headers = {
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
         "x-mindspace-id": mindSpaceId.get(),
     }
@@ -334,6 +336,7 @@ class EventMemory(Memory):
         url = f"{Configs.BACKEND_SERVICE_URL}/memory/event"
 
         headers = {
+            "X-Request-ID": request_id.get(),
             "Authorization": f"Bearer {access_token.get()}",
             "x-mindspace-id": mindSpaceId.get(),
         }
@@ -363,6 +366,7 @@ class EventMemory(Memory):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/event/search"
 
         headers = {
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
         "x-mindspace-id": mindSpaceId.get(),
     }

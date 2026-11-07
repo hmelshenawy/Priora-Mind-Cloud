@@ -23,7 +23,6 @@ export class MemoryController {
 
   ) {
     const userId = req.user.userId
-    console.log("meomory control hit:D ")
     return this.memoryService.create(createMemoryDto, userId, mindSpaceId);
   }
 

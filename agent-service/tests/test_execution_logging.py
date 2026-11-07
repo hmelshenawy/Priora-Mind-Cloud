@@ -16,6 +16,7 @@ from agentcore.context import access_token
 from agentcore.schemas import ChatRequest, MemoryResponse
 from agentcore.skills.skill_loader import SkillManager
 from agentcore import main
+from starlette.requests import Request
 
 
 SECRET = "PRIVATE_CONTENT_https://secret.invalid_credential"
@@ -127,7 +128,7 @@ class ExecutionLoggingTests(unittest.IsolatedAsyncioTestCase):
 
         async def consume(credential):
             body = ChatRequest(message=SECRET, history=[], accessToken=credential, mindSpaceId=uuid4())
-            response = await main.chat(body)
+            response = await main.chat(body, Request({"type": "http", "headers": []}))
             output = [chunk async for chunk in response.body_iterator]
             self.assertEqual("".join(output), SECRET)
             self.assertEqual(request_id.get(), "-")
@@ -189,7 +190,7 @@ class ExecutionLoggingTests(unittest.IsolatedAsyncioTestCase):
         agent.memory.llm.structured_chat = fail_extraction
         body = ChatRequest(message=SECRET, history=[], accessToken=SECRET, mindSpaceId=uuid4())
         with patch.object(main, "agent", agent), self.assertLogs("agentcore", level="DEBUG") as captured:
-            response = await main.chat(body)
+            response = await main.chat(body, Request({"type": "http", "headers": []}))
             self.assertEqual("".join([chunk async for chunk in response.body_iterator]), SECRET)
             pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
             gate.set()
@@ -213,7 +214,7 @@ class ExecutionLoggingTests(unittest.IsolatedAsyncioTestCase):
 
         body = ChatRequest(message=SECRET, history=[], accessToken=SECRET, mindSpaceId=uuid4())
         with patch.object(main.agent, "stream", stream), self.assertLogs("agentcore", level="DEBUG") as captured:
-            response = await main.chat(body)
+            response = await main.chat(body, Request({"type": "http", "headers": []}))
             self.assertEqual(await anext(response.body_iterator), SECRET)
             await response.body_iterator.aclose()
         logs = "\n".join(captured.output)

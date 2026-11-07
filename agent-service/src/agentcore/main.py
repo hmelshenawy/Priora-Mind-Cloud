@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from agentcore.config import Configs
 from agentcore.schemas import ChatRequest
 # from agentcore.agent import Agent, OrchAgent
@@ -12,6 +12,7 @@ import logging
 import asyncio
 from time import perf_counter
 from uuid import uuid4
+import re
 from langsmith import tracing_context
 from agentcore.memory.memory import RequestLogger, request_id
 
@@ -51,15 +52,18 @@ async def health():
     }
 
 @app.post("/chat", dependencies=[Depends(verify_service_key)])
-async def chat(body: ChatRequest):
+async def chat(body: ChatRequest, request: Request):
     message = body.message
     token = body.accessToken
     history = [item.model_dump() for item in body.history]
     mindSpace = str(body.mindSpaceId)
 
     
+    supplied = request.headers.getlist("x-request-id")
+    correlation = supplied[0] if len(supplied) == 1 and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", supplied[0]) and supplied[0] != "-" else uuid4().hex
+
     async def generate():
-        request_ctx = request_id.set(uuid4().hex)
+        request_ctx = request_id.set(correlation)
         token_ctx = access_token.set(token)
         mindSpace_ctx = mindSpaceId.set(mindSpace)
         started = perf_counter()

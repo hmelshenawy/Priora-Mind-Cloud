@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { event, elapsed, failure, requestContext } from '../logging/request-logging';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { MessageRole } from '../../generated/prisma/enums';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -6,6 +7,7 @@ import { AgentService } from 'src/agent/agent.service';
 
 @Injectable()
 export class ConversationMessagesService {
+  private readonly logger = new Logger(ConversationMessagesService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly agent: AgentService,
@@ -50,42 +52,60 @@ export class ConversationMessagesService {
 
     })
 
-    console.log("agnet reply:", agentReply)
+
 
     const reader = agentReply.getReader()
     const decoder = new TextDecoder()
 
     let fullReply = ''
+    let chunks = 0;
+    let status = 'cancelled';
+    let stage = 'agent_stream';
+    const started = performance.now();
+    try {
 
-    while (true) {
-      const { value, done } = await reader.read()
+      while (true) {
+        const { value, done } = await reader.read()
 
-      if (done) break
+        if (done) break
 
-      const chunk = decoder.decode(value, { stream: true })
-      console.log("NEST CHUNK:", JSON.stringify(chunk))
+        const chunk = decoder.decode(value, { stream: true })
+        chunks++;
 
-      fullReply += chunk
+        fullReply += chunk
 
-      yield chunk
+        yield chunk
+      }
+
+      stage = 'message_persist';
+      await this.prisma.message.createMany({
+        data: [{
+          conversationId,
+          role: MessageRole.USER,
+          content: dto.content.trim(),
+          createdAt: userCreatedAt
+        },
+        {
+          conversationId,
+          role: MessageRole.ASSISTANT,
+          content: fullReply,
+        },
+        ],
+      })
+      status = 'completed';
+      const context = requestContext.getStore();
+      if (context) context.counts = { saved_count: 2 };
+    } catch (error) {
+      status = 'failed';
+      if (stage === 'agent_stream' && error instanceof DOMException && error.name === 'TimeoutError') {
+        failure('agent_timeout', stage, 'warn');
+      } else {
+        failure(stage === 'message_persist' ? 'message_persist_failed' : 'agent_stream_failed', stage);
+      }
+      throw error;
+    } finally {
+      this.logger.debug(event('agent.stream.finished', { operation: 'chat', status: requestContext.getStore()?.cancelled ? 'cancelled' : status, duration_ms: elapsed(started), chunk_count: chunks, output_chars: fullReply.length, error_code: status === 'failed' ? requestContext.getStore()?.failure?.error_code : undefined }));
     }
-
-    await this.prisma.message.createMany({
-      data: [{
-        conversationId,
-        role: MessageRole.USER,
-        content: dto.content.trim(),
-        createdAt: userCreatedAt
-      },
-      {
-        conversationId,
-        role: MessageRole.ASSISTANT,
-        content: fullReply,
-      },
-      ],
-    })
-
-
   }
 
   async findAll(conversationId: string, userId: string) {

@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { event, elapsed, failure, requestContext } from '../logging/request-logging';
+import { BadRequestException, ConflictException, HttpException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateMemoryDto } from './dto/create-memory.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { randomUUID } from 'crypto';
@@ -14,6 +15,7 @@ type SimilarMemory = {
 
 @Injectable()
 export class MemoryService {
+  private readonly logger = new Logger(MemoryService.name);
   constructor(
     private readonly prisma: PrismaService,
   ) { }
@@ -26,14 +28,18 @@ export class MemoryService {
     }
     const isExist = await this.prisma.memory.findFirst({ where: { userId: userId, mindSpaceId: mindSpaceId, content: dto.content } })
     if (isExist) {
+      failure('memory_duplicate', 'memory_create', 'warn');
       throw new ConflictException("Memory Already Exist")
     }
 
     const dupCandidates = await this.searchSimilarMemories(dto.embedding, userId, mindSpaceId, dto.type,3 , 0.80)
     if (dupCandidates.length > 0) {
+  failure('memory_duplicate', 'memory_create', 'warn');
   throw new ConflictException("Similar Memory Already Exists");
 }
     const memory = await this.insertMemory(dto, userId, mindSpaceId)
+    const context = requestContext.getStore();
+    if (context) context.counts = { saved_count: 1 };
 
     return {
       success: true,
@@ -44,14 +50,16 @@ export class MemoryService {
   async search(dto, userId: string, mindSpaceId: string) {
 
     // validation / business logic هنا
-    // console.log(userId)
-    // console.log(dto)
-    // console.log(mindSpaceId)
-    return this.searchSimilarMemories(
+    const started = performance.now();
+    const results = await this.searchSimilarMemories(
       dto.embedding,
       userId,
       mindSpaceId
     );
+    const context = requestContext.getStore();
+    if (context) context.counts = { result_count: results.length };
+    this.logger.debug(event('memory.search.completed', { operation: 'memory.search', status: 'completed', kind: 'profile', result_count: results.length, duration_ms: elapsed(started) }));
+    return results;
   }
 
 
