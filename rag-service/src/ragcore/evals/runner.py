@@ -22,7 +22,7 @@ load_dotenv(".env.eval")
 
 RAG_URL = os.getenv("EVAL_RAG_URL", "http://127.0.0.1:8900")
 MINDSPACE_ID = os.environ["EVAL_MINDSPACE_ID"]
-TOP_K = 10
+TOP_K = 5
 
 
 
@@ -43,99 +43,104 @@ async def retrieve_contexts(client: httpx.AsyncClient, question: str):
 
 
 async def main():
-    cases = load_dataset()
-    cases = load_dataset()[8:9]
+    # cases = load_dataset()[1:2]  # TCBT-09 only
+    cases = load_dataset()      # All tests
 
     metrics = RagMetrics()
     results = []
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(
-        connect=10.0,
-        read=180.0,
-        write=30.0,
-        pool=10.0,
-    )) as client:
-        for case in cases:
+    for case in cases:
+        if case["id"] == "CBT-13":
+            continue
 
-            # Negative / unanswerable cases require
-            # a separate evaluation policy.
-            if case["id"] == "CBT-13":
-                continue
-            try:
-                response = await retrieve_contexts(
-                client,
-                case["question"],
+        # 1. Retrieve contexts
+        try:
+            response = httpx.post(
+                f"{RAG_URL}/v1/search",
+                json={
+                    "query": case["question"],
+                    "topK": TOP_K,
+                    "mindSpaceId": MINDSPACE_ID,
+                },
+                timeout=180.0,
             )
 
-            except httpx.TimeoutException as exc:
-                print(f"{case['id']} RETRIEVAL TIMEOUT: {exc}")
-                continue
-            except httpx.HTTPError as exc:
-                print(f"{case['id']} RETRIEVAL ERROR: {exc}")
-                continue
+            response.raise_for_status()
+            data = response.json()
 
-            points = response.get("points", [])
+        except httpx.TimeoutException as exc:
+            print(f"{case['id']} RETRIEVAL TIMEOUT: {exc}")
+            continue
 
-            contexts = [
-                point["payload"]["text"]
-                for point in points
-                if point.get("payload", {}).get("text")
-            ]
+        except httpx.HTTPError as exc:
+            print(f"{case['id']} RETRIEVAL ERROR: {exc}")
+            continue
 
-            if not contexts:
-                print(f"{case['id']}: No contexts retrieved")
-                continue
+        # 2. Extract retrieved contexts
+        points = data.get("points", [])
 
-            print("\nQUESTION:")
-            print(case["question"])
+        contexts = [
+            point["payload"]["text"]
+            for point in points
+            if point.get("payload", {}).get("text")
+        ]
 
-            print("\nREFERENCE ANSWER:")
-            print(case["reference_answer"])
+        if not contexts:
+            print(f"{case['id']}: No contexts retrieved")
+            continue
 
-            print("\nRETRIEVED CONTEXTS:")
+        # 3. Debug output
+        print("\nQUESTION:")
+        print(case["question"])
 
-            for i, point in enumerate(points, start=1):
-                payload = point.get("payload", {})
+        print("\nREFERENCE ANSWER:")
+        print(case["reference_answer"])
 
-                print(f"\n--- CHUNK {i} ---")
-                print("Score:", point.get("score"))
-                print("Page:", payload.get("page_no"))
-                print("Text:", payload.get("text", "")[:1500])
-            
-            
-            try:
-                scores = await metrics.evaluate(
-                    question=case["question"],
-                    reference=case["reference_answer"],
-                    contexts=contexts,
-                )
+        print("\nRETRIEVED CONTEXTS:")
 
-                result = {
-                    "id": case["id"],
-                    "retrieved_chunks": len(contexts),
-                    **scores,
-                }
+        for i, point in enumerate(points, start=1):
+            payload = point.get("payload", {})
 
-                results.append(result)
-                print(f"  - Evaluation RAG Result: ===>>>{result}")
+            print(f"\n--- CHUNK {i} ---")
+            print("Score:", point.get("score"))
+            print("Page:", payload.get("page_no"))
+            print("Chunk:", payload.get("chunk_index"))
+            print("Text:", payload.get("text", "")[:1500])
 
-            except Exception as exc:
-                print(f"{case['id']} EVALUATION FAILED: {exc}")
+        # 4. Evaluate with RAGAS
+        try:
+            scores = await metrics.evaluate(
+                question=case["question"],
+                reference=case["reference_answer"],
+                contexts=contexts,
+            )
 
+            result = {
+                "id": case["id"],
+                "retrieved_chunks": len(contexts),
+                **scores,
+            }
+
+            results.append(result)
+            print(f"\nEvaluation RAG Result: {result}")
+
+        except Exception as exc:
+            print(f"{case['id']} EVALUATION FAILED: {exc}")
+
+    # 5. Calculate averages
     if results:
         print("\nAVERAGE SCORES")
+
         for metric in ("context_precision", "context_recall"):
             values = [
-                r[metric]
-                for r in results
-                if isinstance(r[metric], (int, float))
+                result[metric]
+                for result in results
+                if isinstance(result.get(metric), (int, float))
             ]
 
             if values:
-                print(
-                    f"{metric}: "
-                    f"{sum(values) / len(values):.3f}"
-                )
+                average = sum(values) / len(values)
+                print(f"{metric}: {average:.3f}")
 
 
 if __name__ == "__main__":
