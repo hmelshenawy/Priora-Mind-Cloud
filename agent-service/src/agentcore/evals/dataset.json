@@ -1,0 +1,79 @@
+
+[
+  {
+    "inputs": {
+      "input": "What time is it in Dubai?"
+    },
+    "outputs": {
+      "expected_tools": ["getDateTime"]
+    }
+  },
+  {
+    "inputs": {
+      "input": "Show me my saved tasks"
+    },
+    "outputs": {
+      "expected_tools": ["getAllTasks"]
+    }
+  },
+  {
+    "inputs": {
+      "input": "What is the 45k service for G-Class 465?"
+    },
+    "outputs": {
+      "expected_tools": ["searchKnowledge", "webSearch"],
+      "expected_rag_empty": true
+    }
+  },
+  {
+    "inputs": {
+      "input": "Use the planning skill to create a roadmap for learning Python"
+    },
+    "outputs": {
+      "expected_tools": ["load_skill"]
+    }
+  },
+  {
+    "inputs": {
+      "input": "Explain what machine learning is"
+    },
+    "outputs": {
+      "expected_tools": ["load_skill"]
+    }
+  },
+  {
+    "inputs": {
+      "input": "What is 2 + 2?"
+    },
+    "outputs": {
+      "expected_tools": []
+    }
+  },
+  {
+    "inputs": {
+      "input": "According to my uploaded CBT at the Crossroads paper, what is the difference between unified and individualized transdiagnostic treatments?"
+    },
+    "outputs": {
+      "expected_tools": ["searchKnowledge"],
+      "reference_answer": "Unified treatments apply the same protocol across multiple disorders without tailoring it to the individual. Individualized treatments adapt interventions to the patient's specific problems, for example by selecting different treatment modules."
+    }
+  },
+  {
+    "inputs": {
+      "input": "Based on my uploaded CBT at the Crossroads paper, what are the three core principles of the Unified Protocol for Emotional Disorders?"
+    },
+    "outputs": {
+      "expected_tools": ["searchKnowledge"],
+      "reference_answer": "Increasing mindful awareness of emotions, increasing cognitive flexibility, and reducing emotion avoidance."
+    }
+  },
+  {
+    "inputs": {
+      "input": "According to my uploaded CBT at the Crossroads article, why is selecting CBT treatment modules based only on diagnosis considered too simplistic?"
+    },
+    "outputs": {
+      "expected_tools": ["searchKnowledge"],
+      "reference_answer": "Diagnosis-only selection is overly simplistic because comorbidity is frequent and patients within the same diagnosis can have different symptoms. The authors recommend selecting modules based on the processes maintaining the patient's problems, such as behavioral activation for anhedonia and exposure for situational avoidance."
+    }
+  }
+]
