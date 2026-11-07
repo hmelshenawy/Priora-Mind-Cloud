@@ -1,15 +1,32 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+from uuid import UUID
 from enum import Enum
 from typing import Literal
 from datetime import datetime
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=10000)
     history: list
     accessToken: str
-    mindSpaceId: str
+    mindSpaceId: UUID
 
+
+    @field_validator("message")
+    @classmethod
+    def validate_message(cls, value: str) -> str:
+        """Reject messages containing only whitespace.
+        Args:
+            value (str): Incoming user message.
+        Returns:
+            str: Validated and trimmed message.
+        """
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Message cannot be empty")
+
+        return value
 
 class AgentRequest(BaseModel):
     message: str
