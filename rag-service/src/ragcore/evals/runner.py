@@ -43,8 +43,8 @@ async def retrieve_contexts(client: httpx.AsyncClient, question: str):
 
 
 async def main():
-    cases = load_dataset()[1:2]  # TCBT-09 only
-    # cases = load_dataset()      # All tests
+    # cases = load_dataset()[1:2]  # TCBT-09 only
+    cases = load_dataset()      # All tests
 
     metrics = RagMetrics()
     results = []
