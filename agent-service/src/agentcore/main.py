@@ -40,7 +40,7 @@ async def chat(body: ChatRequest):
     message = body.message
     token = body.accessToken
     history = body.history
-    mindSpace = body.mindSpaceId
+    mindSpace = str(body.mindSpaceId)
 
     
     async def generate():
