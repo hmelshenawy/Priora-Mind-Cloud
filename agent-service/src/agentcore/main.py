@@ -13,7 +13,6 @@ import asyncio
 from time import perf_counter
 from uuid import uuid4
 import re
-from langsmith import tracing_context
 from agentcore.memory.memory import RequestLogger, request_id
 
 logging.basicConfig(
@@ -73,10 +72,10 @@ async def chat(body: ChatRequest, request: Request):
         try:
             # Console hygiene must not leave nested content-bearing traces enabled.
             # Background extraction tasks inherit this request-local context.
-            with tracing_context(enabled=False):
-                async for chunk in agent.stream(message, history):
-                    output_chars += len(chunk)
-                    yield chunk
+            
+            async for chunk in agent.stream(message, history):
+                output_chars += len(chunk)
+                yield chunk
             outcome = "completed"
         except (asyncio.CancelledError, GeneratorExit):
             raise
