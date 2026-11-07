@@ -12,6 +12,7 @@ export class AgentService {
   async runAgent(run: RunAgentDto) {
     const url = this.config.getOrThrow("AGENT_SERVICE_URL")
     const timeout = Number(this.config.getOrThrow("AGENT_TIMEOUT_MS"))
+    const agentSecretKey = this.config.getOrThrow("AGENT_SECRET_KEY")
     const userMessage = run.message
     const history = run.history
     const token = run.accessToken
@@ -31,13 +32,18 @@ export class AgentService {
           }),
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Key': agentSecretKey,
           },
           signal: AbortSignal.timeout(timeout)
         },
       )
 
       if (!response.ok) {
-        throw new Error('Agent request failed');
+        const errorBody = await response.text();
+
+        console.error('Agent HTTP Status:', response.status);
+
+        throw new Error(`Agent request failed: HTTP ${response.status}`);
       }
 
       if (!response.body) {

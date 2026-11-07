@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from agentcore.config import Configs
 from agentcore.schemas import ChatRequest
 # from agentcore.agent import Agent, OrchAgent
 from agentcore.langchain_agent.agent import Agent
+from  agentcore.utils.service_verfication import verify_service_key
 from agentcore.skills.skill_loader import UserSkillProvider, BuildinSkillProvider , SkillManager
 from agentcore.tools.tools import tools_registery, available_tools
 from agentcore.context import access_token, mindSpaceId
@@ -35,7 +36,7 @@ async def health():
         "status": "ok"
     }
 
-@app.post("/chat")
+@app.post("/chat", dependencies=[Depends(verify_service_key)])
 async def chat(body: ChatRequest):
     message = body.message
     token = body.accessToken

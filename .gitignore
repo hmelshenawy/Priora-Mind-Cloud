@@ -22,5 +22,8 @@ Thumbs.db
 __pycache__/
 *.pyc
 
+# Python generated files
+__pycache__/
+*.py[cod]
 agent-service/generated_pdfs/
 agent-service/src/agentcore/tools/__pycache__/
