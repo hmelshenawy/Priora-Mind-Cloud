@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { BadRequestException, Injectable, RequestTimeoutException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
@@ -8,7 +9,7 @@ export class RagService {
     constructor(
         private readonly configs: ConfigService,
     ) { }
-    async ingest(storageKey: string, source_id: string, mindSpaceId: string, fileName: string) {
+    async ingest(storageKey: string, source_id: string, mindSpaceId: string, fileName: string, requestId: string = randomUUID()) {
         const baseUrl = this.configs.getOrThrow("RAG_URL")
         const ragSecretKey = this.configs.getOrThrow<string>("RAG_SECRET_KEY");
         const url = baseUrl + "/v1/ingest"
@@ -18,6 +19,7 @@ export class RagService {
                 headers: {
                     "Content-Type": "application/json",
                     "X-Internal-Service-Key": ragSecretKey,
+                    "X-Request-ID": requestId,
                 },
                 body: JSON.stringify({
                     storageKey,
@@ -36,7 +38,6 @@ export class RagService {
 
         } catch (error) {
             if (error instanceof DOMException && error.name === "TimeoutError") {
-                console.log(error)
                 throw new RequestTimeoutException("RAG ingestion timed out")
             }
             throw error

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -23,7 +24,8 @@ export class DocumentProcessor extends WorkerHost {
 
     const { documentId, storageKey, mindSpaceId, fileName } = job.data;
 
-    this.logger.log(`Processing document: ${documentId}`);
+    const requestId = randomUUID();
+    this.logger.debug(`request_id=${requestId} document.processing.started`);
 
     try {
       await this.prisma.document.update({
@@ -31,18 +33,18 @@ export class DocumentProcessor extends WorkerHost {
         data: { status: 'PROCESSING' },
       });
 
-      this.logger.log(`Calling RAG for document: ${documentId}`);
+      this.logger.debug(`request_id=${requestId} document.ingest.started`);
 
-      await this.rag.ingest(storageKey, documentId, mindSpaceId, fileName);
+      await this.rag.ingest(storageKey, documentId, mindSpaceId, fileName, requestId);
 
       await this.prisma.document.update({
         where: { id: documentId },
         data: { status: 'READY' },
       });
 
-      this.logger.log(`Document READY: ${documentId}`);
+      this.logger.log(`request_id=${requestId} document.processing.completed`);
     } catch (error) {
-      this.logger.error(`Document processing failed: ${documentId}`, error);
+      this.logger.error(`request_id=${requestId} document.processing.failed error_code=document_processing_failed`);
 
       if (job.attemptsMade + 1 >= (job.opts.attempts ?? 1)) {
         await this.prisma.document.update({

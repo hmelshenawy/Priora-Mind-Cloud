@@ -127,6 +127,7 @@ class UserProfileMemory(Memory):
             json={"texts": [text]},
             headers={
                 "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+                "X-Request-ID": request_id.get(),
             },
             timeout=(10, 60),
         )
@@ -315,6 +316,7 @@ class EventMemory(Memory):
             json={"texts": [text]},
             headers={
                 "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+                "X-Request-ID": request_id.get(),
             },
             timeout=(10, 60),
         )
