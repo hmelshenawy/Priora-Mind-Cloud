@@ -23,7 +23,10 @@ def searchKnowledge( query: str) -> dict:
             "topK": 5,
         "mindSpaceId": mindSpaceId.get(),
         },
-          timeout=(60, 120)
+        headers= {
+            "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+            },
+                      timeout=(60, 120)
     )
 
     if not response.ok:

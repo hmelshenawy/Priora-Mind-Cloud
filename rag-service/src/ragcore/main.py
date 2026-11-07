@@ -5,13 +5,21 @@ from ragcore.chunker import Chunker, WordChunker
 from ragcore.embedding import Embedding
 from ragcore.qdrant_client import QdClient
 from ragcore.pdfExtractor import PdfExtractor
+from fastapi import FastAPI, Depends
+from ragcore.utils.service_verfication import verify_service_key
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title = "Priora Mind Cloud Rag Service")
 client = StorageClient(SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_STORAGE_BUCKET)
 chunker = WordChunker(size=275, overlap=15)
 embedding = Embedding(EMBEDDING_MODEL) 
 qdClient = QdClient(url= QDRANT_URL, api_key=QDRANT_API_KEY, timeout= 60)
+
+
+
+
 
 @app.get("/v1/health")
 async def health():
@@ -20,7 +28,8 @@ async def health():
         }
 
 
-@app.post("/v1/ingest")
+
+@app.post("/v1/ingest", dependencies=[Depends(verify_service_key)])
 async def ingest(request: Request,):
     payload = await request.json()
     file_name = payload["fileName"]
@@ -54,7 +63,8 @@ async def ingest(request: Request,):
 }
 
 
-@app.post("/v1/search")
+
+@app.post("/v1/search", dependencies=[Depends(verify_service_key)])
 async def search(request: Request):
     payload = await request.json()
     query = payload["query"]
@@ -67,7 +77,8 @@ async def search(request: Request):
     return response
 
 
-@app.post("/v1/embed")
+
+@app.post("/v1/embed", dependencies=[Depends(verify_service_key)])
 async def embed(request: Request):
     payload = await request.json()
     texts = payload["texts"]

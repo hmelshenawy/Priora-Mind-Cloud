@@ -68,12 +68,30 @@ class UserProfileMemory(Memory):
 
 
 
-    async def embed(self, text: str):
-        print("EMBEDDING MEMORY REQUEST")
-        url = f"{Configs.RAG_SERVICE_URL}"+"/v1/embed"
-        vector = await asyncio.to_thread(requests.post ,url, json={"texts": [text]})
+    async def embed(self, text: str) -> list[float]:
+        """Generate an embedding for memory text.
+        Args:
+            text (str): Memory content to embed.
+        Returns:
+            list[float]: Generated embedding vector.
+        """
 
-        return vector.json()["vectors"][0]
+        print("EMBEDDING MEMORY REQUEST")
+
+        url = f"{Configs.RAG_SERVICE_URL}/v1/embed"
+        response = await asyncio.to_thread(
+            requests.post,
+            url,
+            json={"texts": [text]},
+            headers={
+                "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+            },
+            timeout=(10, 60),
+        )
+
+        response.raise_for_status()
+
+        return response.json()["vectors"][0]
 
 
 
@@ -242,12 +260,30 @@ class EventMemory(Memory):
 
 
 
-    async def embed(self, text: str):
+    async def embed(self, text: str) -> list[float]:
+        """Generate an embedding vector for memory text.
+        Args:
+            text (str): Text to embed.
+        Returns:
+            list[float]: Generated embedding vector.
+        """
         print("EMBEDDING MEMORY REQUEST")
-        url = f"{Configs.RAG_SERVICE_URL}"+"/v1/embed"
-        vector = await asyncio.to_thread(requests.post ,url, json={"texts": [text]})
 
-        return vector.json()["vectors"][0]
+        url = f"{Configs.RAG_SERVICE_URL}/v1/embed"
+
+        response = await asyncio.to_thread(
+            requests.post,
+            url,
+            json={"texts": [text]},
+            headers={
+                "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+            },
+            timeout=(10, 60),
+        )
+
+        response.raise_for_status()
+
+        return response.json()["vectors"][0]
 
 
 

@@ -7,14 +7,18 @@ import { ConfigService } from "@nestjs/config";
 export class RagService {
     constructor(
         private readonly configs: ConfigService,
-    ){}
+    ) { }
     async ingest(storageKey: string, source_id: string, mindSpaceId: string, fileName: string) {
-        const baseUrl= this.configs.getOrThrow("RAG_URL")
-        const url = baseUrl+"/v1/ingest"
+        const baseUrl = this.configs.getOrThrow("RAG_URL")
+        const ragSecretKey = this.configs.getOrThrow<string>("RAG_SECRET_KEY");
+        const url = baseUrl + "/v1/ingest"
         try {
             const ingest = await fetch(url, {
                 method: "POST",
-                headers: { 'Content-Type': 'application/json', },
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Internal-Service-Key": ragSecretKey,
+                },
                 body: JSON.stringify({
                     storageKey,
                     source_id,
