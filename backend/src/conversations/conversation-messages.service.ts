@@ -23,12 +23,24 @@ export class ConversationMessagesService {
     const mindSpaceId = conversation.mindSpaceId
     const accessToken = auth?.replace(/^Bearer\s+/i, '');
     const sourceMessageId = ""   // sebo fadi now
-    const history = await this.findAll(conversationId, userId)
+    const history = await this.prisma.message.findMany({
+      where: {
+        conversationId,
+        conversation: {
+          mindSpace: {
+            userId,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 48,
+    });
+    history.reverse()
     const historyList = history.map((message) => ({
       role: message.role.toLowerCase(),
       content: message.content,
     }))
-
+    
     const agentReply = await this.agent.runAgent({
       message: dto.content,
       history: historyList,
@@ -73,7 +85,7 @@ export class ConversationMessagesService {
       ],
     })
 
-    
+
   }
 
   async findAll(conversationId: string, userId: string) {
