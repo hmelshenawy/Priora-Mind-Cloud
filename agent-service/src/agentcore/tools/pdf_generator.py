@@ -8,6 +8,8 @@ Arabic/RTL, images and nested tables are not supported yet.
 """
 
 from __future__ import annotations
+
+from agentcore.memory.memory import request_id
 import httpx
 from agentcore.config import Configs
 from dataclasses import dataclass
@@ -276,6 +278,7 @@ async def generate_pdf(
         response = await client.post(
             f"{Configs.BACKEND_SERVICE_URL}/documents/generated",
             headers={
+                "X-Request-ID": request_id.get(),
                 "Authorization": f"Bearer {access_token.get()}"
             },
             files={

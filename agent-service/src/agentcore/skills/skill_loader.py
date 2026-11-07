@@ -1,3 +1,4 @@
+from agentcore.memory.memory import request_id
 from pathlib import Path
 from abc import ABC, abstractmethod
 from agentcore.context import  access_token
@@ -55,7 +56,6 @@ class BuildinSkillProvider(SkillProvider):
                     "name": name,
                     "description": description
                 })
-        print("AVAILABLE SKILSS: ", skills)
         return skills
 
     def load_skill(self, name: str):
@@ -76,6 +76,7 @@ class UserSkillProvider(SkillProvider):
     def list(self):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/user-skills"
         headers = {
+            "X-Request-ID": request_id.get(),
             "Authorization": f"Bearer {access_token.get()}"
         }
         params = {
@@ -97,6 +98,7 @@ class UserSkillProvider(SkillProvider):
         url = f"{Configs.BACKEND_SERVICE_URL}/user-skills/{identifier}"
 
         headers = {
+            "X-Request-ID": request_id.get(),
             "Authorization": f"Bearer {access_token.get()}"
         }
 

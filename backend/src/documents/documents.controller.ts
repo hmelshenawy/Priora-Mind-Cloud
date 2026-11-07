@@ -22,7 +22,6 @@ export class DocumentsController {
   uploadFile(@Body() body: UploadFileDto, @UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user.userId
     const mindSpaceId = body.mindSpaceId
-    console.log(file)
     return this.documentsService.upload(file, mindSpaceId, userId)
   }
 

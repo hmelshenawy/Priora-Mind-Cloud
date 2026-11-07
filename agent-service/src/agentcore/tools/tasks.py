@@ -1,3 +1,4 @@
+from agentcore.memory.memory import request_id
 from agentcore.tools.tools import available_tools, tools_registery
 from agentcore.config import Configs
 import requests
@@ -36,6 +37,7 @@ def createTask(title: str, description: str,executor:str,):
                 "description": description,
                 "executor": executor
             }, headers ={
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
         "Content-Type": "application/json",
     },
@@ -103,6 +105,7 @@ def getAllTasks():
     response = requests.get(url=url, params={
         "mindSpaceId": mindSpaceId.get()
     }, headers={
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
     },

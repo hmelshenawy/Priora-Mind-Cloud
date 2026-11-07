@@ -8,6 +8,49 @@ import requests
 from agentcore.context import access_token, mindSpaceId
 import json
 from langsmith import traceable
+from contextvars import ContextVar
+from functools import wraps
+from time import perf_counter
+import logging
+
+
+request_id = ContextVar("agent_request_id", default="-")
+
+
+class RequestLogger(logging.LoggerAdapter):
+    """Correlate metadata-only logs, including inherited background contexts."""
+
+    def process(self, msg, kwargs):
+        correlation = self.extra.get("request_id", request_id.get())
+        return f"request_id={correlation} {msg}", kwargs
+
+
+logger = RequestLogger(logging.getLogger(__name__), {})
+
+
+def memory_operation(kind, stage):
+    """Observe an async memory boundary without changing its result or errors."""
+    def decorate(function):
+        @wraps(function)
+        async def observed(*args, **kwargs):
+            started = perf_counter()
+            logger.debug("memory.%s.started kind=%s", stage, kind)
+            try:
+                result = await function(*args, **kwargs)
+            except asyncio.CancelledError:
+                logger.debug("memory.%s.cancelled kind=%s", stage, kind)
+                raise
+            except requests.RequestException:
+                logger.warning("memory.%s.failed kind=%s error_code=dependency_failed", stage, kind)
+                raise
+            except Exception:
+                logger.error("memory.%s.failed kind=%s error_code=memory_operation_failed", stage, kind)
+                raise
+            logger.debug("memory.%s.completed kind=%s duration_ms=%d",
+                         stage, kind, (perf_counter() - started) * 1000)
+            return result
+        return observed
+    return decorate
 
 class Memory(ABC):
     def __init__(self):
@@ -46,9 +89,9 @@ class UserProfileMemory(Memory):
 
 
 
+    @memory_operation("profile", "extract")
     @traceable(name="memory-extraction")
     async def gather(self, user_message: str):
-        print("GATHERING MEMORIES!!")
         messages = [
         {
             "role": "system",
@@ -68,12 +111,30 @@ class UserProfileMemory(Memory):
 
 
 
-    async def embed(self, text: str):
-        print("EMBEDDING MEMORY REQUEST")
-        url = f"{Configs.RAG_SERVICE_URL}"+"/v1/embed"
-        vector = await asyncio.to_thread(requests.post ,url, json={"texts": [text]})
+    async def embed(self, text: str) -> list[float]:
+        """Generate an embedding for memory text.
+        Args:
+            text (str): Memory content to embed.
+        Returns:
+            list[float]: Generated embedding vector.
+        """
 
-        return vector.json()["vectors"][0]
+
+        url = f"{Configs.RAG_SERVICE_URL}/v1/embed"
+        response = await asyncio.to_thread(
+            requests.post,
+            url,
+            json={"texts": [text]},
+            headers={
+                "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+                "X-Request-ID": request_id.get(),
+            },
+            timeout=(10, 60),
+        )
+
+        response.raise_for_status()
+
+        return response.json()["vectors"][0]
 
 
 
@@ -81,12 +142,14 @@ class UserProfileMemory(Memory):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory"
 
         headers = {
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
         'x-mindspace-id': mindSpaceId.get(),
         }
         if not memories:
             return
 
+        saved = duplicates = 0
         for memory in memories:
             vector = await self.embed(memory.content)
             payload = {
@@ -97,20 +160,19 @@ class UserProfileMemory(Memory):
         }
             response = await asyncio.to_thread(requests.post, url, json=payload, headers=headers)
             if response.status_code == 409:
-                print("Memory already exists, skipping:", memory.content)
+                duplicates += 1
                 continue
 
-            print("MEMORY SAVED: ", memories)
-            print("STATUS:", response.status_code)
-            print("BODY:", response.text)
             response.raise_for_status()
-
+            saved += 1
+        logger.debug("memory.persist.completed kind=profile saved_count=%d duplicate_count=%d", saved, duplicates)
 
 
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/search"
 
         headers = {
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
         "x-mindspace-id": mindSpaceId.get(),
     }
@@ -126,13 +188,13 @@ class UserProfileMemory(Memory):
 
 
 
+    @memory_operation("profile", "retrieve")
     @traceable(name="profile-memory-retrieval", run_type="retriever")
     async def retrieve (self, userMessage):
-        print("RETREIVE MEMORY")
         vector = await self.embed(userMessage)
         memories =await self.search(vector)
-        print(f"RETREIVED MEMORIES {len(memories)}")
 
+        logger.debug("memory.retrieve.count kind=profile result_count=%d", len(memories))
         return memories
 
 
@@ -157,14 +219,12 @@ class EventMemory(Memory):
 
 
 
+    @memory_operation("event", "extract")
     @traceable(name="event-extraction")
     async def gather(self, user_message: str, chat_history: list[str], salience_threshold: float= 0.40):
-        print("EXTRACTING EVENTS")
         messages = self.input_builder(user_message, chat_history)
-        print(messages)
         events =await self.llm.structured_chat(messages, EventResponse)
         # events = self.response_normalize(response.message.content, EventResponse)
-        # print("------------------", events)
         if not events.events:
             return []
         events =await self.get_salience(events)
@@ -242,12 +302,30 @@ class EventMemory(Memory):
 
 
 
-    async def embed(self, text: str):
-        print("EMBEDDING MEMORY REQUEST")
-        url = f"{Configs.RAG_SERVICE_URL}"+"/v1/embed"
-        vector = await asyncio.to_thread(requests.post ,url, json={"texts": [text]})
+    async def embed(self, text: str) -> list[float]:
+        """Generate an embedding vector for memory text.
+        Args:
+            text (str): Text to embed.
+        Returns:
+            list[float]: Generated embedding vector.
+        """
 
-        return vector.json()["vectors"][0]
+        url = f"{Configs.RAG_SERVICE_URL}/v1/embed"
+
+        response = await asyncio.to_thread(
+            requests.post,
+            url,
+            json={"texts": [text]},
+            headers={
+                "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+                "X-Request-ID": request_id.get(),
+            },
+            timeout=(10, 60),
+        )
+
+        response.raise_for_status()
+
+        return response.json()["vectors"][0]
 
 
 
@@ -258,10 +336,12 @@ class EventMemory(Memory):
         url = f"{Configs.BACKEND_SERVICE_URL}/memory/event"
 
         headers = {
+            "X-Request-ID": request_id.get(),
             "Authorization": f"Bearer {access_token.get()}",
             "x-mindspace-id": mindSpaceId.get(),
         }
 
+        saved = duplicates = 0
         for index, event in enumerate(events, start=1):
             payload = event.model_dump(mode="json")
 
@@ -274,19 +354,19 @@ class EventMemory(Memory):
             )
 
             if response.status_code == 409:
-                print(f"Event {index} already exists, skipping: {event.summary}")
+                duplicates += 1
                 continue
 
             response.raise_for_status()
-
-            print(f"Event {index} saved: {event.summary}")
-
+            saved += 1
+        logger.debug("memory.persist.completed kind=event saved_count=%d duplicate_count=%d", saved, duplicates)
 
 
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/event/search"
 
         headers = {
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
         "x-mindspace-id": mindSpaceId.get(),
     }
@@ -302,9 +382,9 @@ class EventMemory(Memory):
 
 
 
+    @memory_operation("event", "retrieve")
     @traceable(name="event-retrieval", run_type="retriever")
     async def retrieve(self, userMessage: str):
-        print("RETREIVE EVENT")
         vector = await self.embed(userMessage)
         events =await self.search(vector)
 
@@ -312,9 +392,8 @@ class EventMemory(Memory):
         event for event in events
         if event.get("similarity", 0) >= 0.50
     ]
-        print(f"SIMILAR EVENTS: {len(events)}")
-        print(f"RELEVANT EVENTS: {len(relevant_events)}")
 
+        logger.debug("memory.retrieve.count kind=event candidate_count=%d result_count=%d", len(events), len(relevant_events))
         return relevant_events
 
 
@@ -335,4 +414,3 @@ class EventMemory(Memory):
         """
         }
         ]
-        

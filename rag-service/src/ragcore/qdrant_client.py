@@ -1,3 +1,7 @@
+from time import perf_counter
+from ragcore.logging_utils import get_logger, set_stage, counts
+
+logger = get_logger(__name__)
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, models
 from qdrant_client.models import Distance, VectorParams
@@ -27,6 +31,10 @@ class QdClient:
         
 
     def upsert(self, collection_name: str,points: list[any],batch_size: int = 50,):
+        set_stage("upsert")
+        started = perf_counter()
+        batch_count = 0
+        counts(completed_point_count=0, completed_batch_count=0)
         if batch_size <= 0:
             raise ValueError("batch_size must be greater than zero")
         
@@ -34,12 +42,14 @@ class QdClient:
             raise ValueError("upsert_points accepts PointStruct objects only")
 
         total = len(points)
-        print("total points:             ", total)
+
 
         for start in range(0, total, batch_size):
             batch = points[start : start + batch_size]
             self.client.upsert(collection_name=collection_name, points=batch, wait=True)
-            print(f"Qdrant upsert: {start + len(batch)}/{total}")
+            batch_count += 1
+            counts(completed_point_count=start + len(batch), completed_batch_count=batch_count)
+        logger.debug("qdrant.upsert.completed point_count=%d batch_count=%d duration_ms=%d", total, batch_count, (perf_counter() - started) * 1000)
         return total
 
 
@@ -51,6 +61,8 @@ class QdClient:
         """Create a cosine collection or validate an existing collection's vector contract."""
     
 
+        set_stage("collection")
+        started = perf_counter()
         collections = self.client.get_collections()
         names = {collection.name for collection in collections.collections}
 
@@ -66,7 +78,7 @@ class QdClient:
                 field_name="mindSpaceId",
                 field_schema=models.PayloadSchemaType.KEYWORD,
             )
-            print("collection created!!")
+            logger.info("qdrant.collection.created collection=configured dimension=%d duration_ms=%d", embedding_dimension, (perf_counter() - started) * 1000)
             return
 
         vectors = self.client.get_collection(collection_name).config.params.vectors
@@ -90,7 +102,7 @@ class QdClient:
             field_schema=models.PayloadSchemaType.KEYWORD,
         )
         
-        print("Collection Confirmed!!")
+        logger.debug("qdrant.collection.checked collection=configured dimension=%d duration_ms=%d", embedding_dimension, (perf_counter() - started) * 1000)
 
 
     def validate_chunk(self, chunk: dict[str, object]) -> None:
@@ -148,6 +160,8 @@ class QdClient:
 
 
     def search(self, vector: list[float], topk, mindSpaceId:str,  collection: str):
+        set_stage("search")
+        started = perf_counter()
         response = self.client.query_points(
             
         collection_name=collection,
@@ -164,4 +178,5 @@ class QdClient:
         ),
     )
 
+        logger.debug("qdrant.search.completed top_k=%d result_count=%d duration_ms=%d", topk, len(response.points), (perf_counter() - started) * 1000)
         return response

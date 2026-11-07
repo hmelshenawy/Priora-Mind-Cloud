@@ -38,7 +38,6 @@ class Chunker(BaseChunker):
 
                 if chunk:
                     
-                    print("chunck:______________ ",chunk)
                     chunks.append(
                         {
                         "chunk_id": str(uuid5(NAMESPACE_URL, f"{source_id}:{index}")),
@@ -96,7 +95,6 @@ class WordChunker(BaseChunker):
                 )
                 index += 1
 
-                print("_______CHUNK__________",chunk)
 
                 start = end - self.overlap
 

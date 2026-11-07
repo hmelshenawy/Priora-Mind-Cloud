@@ -1,3 +1,4 @@
+from agentcore.memory.memory import request_id
 from agentcore.tools.tools import available_tools, tools_registery
 from agentcore.config import Configs
 import requests
@@ -26,6 +27,7 @@ def createNote( title: str,content: str):
         "title": title,
         "content": content
     }, headers={
+        "X-Request-ID": request_id.get(),
         "Authorization": f"Bearer {access_token.get()}",
                 "Content-Type": "application/json",
     },
@@ -86,6 +88,7 @@ def getAllNotes():
     response = requests.get(url= url, params={
             "mindSpaceId": mindSpaceId.get(),
         }, headers={
+            "X-Request-ID": request_id.get(),
             "Authorization": f"Bearer {access_token.get()}",
                     "Content-Type": "application/json",
         }, timeout=(30, 60))

@@ -1,3 +1,4 @@
+from agentcore.memory.memory import request_id
 from agentcore.tools.tools import available_tools, tools_registery
 from agentcore.config import Configs
 import requests
@@ -23,7 +24,11 @@ def searchKnowledge( query: str) -> dict:
             "topK": 5,
         "mindSpaceId": mindSpaceId.get(),
         },
-          timeout=(60, 120)
+        headers= {
+            "X-Internal-Service-Key": Configs.RAG_SECRET_KEY,
+             "X-Request-ID": request_id.get(),
+            },
+                      timeout=(60, 120)
     )
 
     if not response.ok:

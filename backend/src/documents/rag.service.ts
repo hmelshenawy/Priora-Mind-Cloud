@@ -1,3 +1,5 @@
+import { failure, resolveRequestId } from '../logging/request-logging';
+import { randomUUID } from "node:crypto";
 import { BadRequestException, Injectable, RequestTimeoutException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
@@ -7,14 +9,19 @@ import { ConfigService } from "@nestjs/config";
 export class RagService {
     constructor(
         private readonly configs: ConfigService,
-    ){}
-    async ingest(storageKey: string, source_id: string, mindSpaceId: string, fileName: string) {
-        const baseUrl= this.configs.getOrThrow("RAG_URL")
-        const url = baseUrl+"/v1/ingest"
+    ) { }
+    async ingest(storageKey: string, source_id: string, mindSpaceId: string, fileName: string, requestId: string = randomUUID()) {
+        const baseUrl = this.configs.getOrThrow("RAG_URL")
+        const ragSecretKey = this.configs.getOrThrow<string>("RAG_SECRET_KEY");
+        const url = baseUrl + "/v1/ingest"
         try {
             const ingest = await fetch(url, {
                 method: "POST",
-                headers: { 'Content-Type': 'application/json', },
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Internal-Service-Key": ragSecretKey,
+                    "X-Request-ID": resolveRequestId(requestId),
+                },
                 body: JSON.stringify({
                     storageKey,
                     source_id,
@@ -26,15 +33,17 @@ export class RagService {
             )
 
             if (!ingest.ok) {
+                failure('rag_http_failed', 'rag_ingest', ingest.status < 500 ? 'warn' : 'error', ingest.status);
                 throw new BadRequestException("RAG Failed!")
             }
             else return ingest.json()
 
         } catch (error) {
             if (error instanceof DOMException && error.name === "TimeoutError") {
-                console.log(error)
+                failure('rag_timeout', 'rag_ingest', 'warn');
                 throw new RequestTimeoutException("RAG ingestion timed out")
             }
+            failure('rag_http_failed', 'rag_ingest');
             throw error
         }
     }

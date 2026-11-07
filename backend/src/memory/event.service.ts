@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { event, elapsed, failure, requestContext } from '../logging/request-logging';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { randomUUID } from 'crypto';
 import { EventMemoryDto } from "./dto/create_event.dto";
@@ -11,6 +12,7 @@ type SimilarEvent = {
 
 @Injectable()
 export class EventMemoryService {
+  private readonly logger = new Logger(EventMemoryService.name);
     constructor(
         private readonly prisma: PrismaService,
     ) { }
@@ -22,15 +24,19 @@ export class EventMemoryService {
 
         const isExist = await this.prisma.event.findFirst({ where: { userId: userId, mindSpaceId: mindSpaceId, summary: dto.summary } })
         if (isExist) {
+            failure('event_duplicate', 'memory_create', 'warn');
             throw new ConflictException("Event Already Exist")
         }
 
         const dup_candidates= await this.searchSimilarEvents(dto.embedding, userId, mindSpaceId, 0.8);
         if(dup_candidates.length > 0){
+            failure('event_duplicate', 'memory_create', 'warn');
             throw new ConflictException("Similar Event Already Exist")
         }
 
         const event = await this.insertEvent(dto, userId, mindSpaceId);
+        const context = requestContext.getStore();
+        if (context) context.counts = { saved_count: 1 };
 
         return {
             success: true,
@@ -97,12 +103,17 @@ export class EventMemoryService {
 
 
     async search(dto: SearchEventDto, userId: string, mindSpaceId: string) {
-        console.log("SEARCHING SIMILAR EMBEDDING ...")
-        return this.searchSimilarEvents(
+
+        const started = performance.now();
+        const results = await this.searchSimilarEvents(
             dto.embedding,
             userId,
             mindSpaceId
         );
+        const context = requestContext.getStore();
+        if (context) context.counts = { result_count: results.length };
+        this.logger.debug(event('memory.search.completed', { operation: 'memory.search', status: 'completed', kind: 'event', result_count: results.length, duration_ms: elapsed(started) }));
+        return results;
     }
 
 

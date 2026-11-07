@@ -1,3 +1,4 @@
+import { requestContext } from '../logging/request-logging';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -18,16 +19,21 @@ export class NotesService {
 
     const exist = await this.isExisting(dto)
     if(exist){
+      const context = requestContext.getStore();
+      if (context) context.counts = { saved_count: 0 };
       return exist.data
     }
 
-    return this.prisma.note.create({
+    const result = await this.prisma.note.create({
       data: {
         mindSpaceId: dto.mindSpaceId,
         title: dto.title.trim(),
         content: dto.content.trim(),
       },
     });
+    const context = requestContext.getStore();
+    if (context) context.counts = { saved_count: 1 };
+    return result;
   }
 
   async findAll(mindSpaceId: string, userId: string) {
@@ -38,10 +44,13 @@ export class NotesService {
       throw new NotFoundException('MindSpace not found');
     }
 
-    return this.prisma.note.findMany({
+    const result = await this.prisma.note.findMany({
       where: { mindSpaceId },
       orderBy: { updatedAt: 'desc' },
     });
+    const context = requestContext.getStore();
+    if (context) context.counts = { result_count: result.length };
+    return result;
   }
 
   async findOne(id: string, userId: string) {
@@ -57,19 +66,25 @@ export class NotesService {
   async update(id: string, dto: UpdateNoteDto, userId: string) {
     await this.findOne(id, userId);
 
-    return this.prisma.note.update({
+    const result = await this.prisma.note.update({
       where: { id },
       data: {
         title: dto.title?.trim(),
         content: dto.content?.trim(),
       },
     });
+    const context = requestContext.getStore();
+    if (context) context.counts = { saved_count: 1 };
+    return result;
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
 
-    return this.prisma.note.delete({ where: { id } });
+    const result = await this.prisma.note.delete({ where: { id } });
+    const context = requestContext.getStore();
+    if (context) context.counts = { saved_count: 1 };
+    return result;
   }
 
   async isExisting(dto: CreateNoteDto){

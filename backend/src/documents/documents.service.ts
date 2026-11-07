@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { event, elapsed, failure, requestId } from '../logging/request-logging';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { StorageService } from './storage.service';
 import { randomUUID } from 'crypto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -8,6 +9,7 @@ import { Queue } from 'bullmq';
 
 @Injectable()
 export class DocumentsService {
+    private readonly logger = new Logger(DocumentsService.name);
     constructor(
         @InjectQueue('document-processing')
         private readonly documentQueue: Queue,
@@ -47,10 +49,13 @@ export class DocumentsService {
             throw new BadRequestException("Failed to add row to database!!")
         }
 
+        const started = performance.now();
+        const correlation = { request_id: requestId(), job_correlation_id: randomUUID() };
         try {
             const job = await this.documentQueue.add(
                 'process-document',
                 {
+                    ...correlation,
                     documentId: documentMetaData.id,
                     storageKey: result,
                     mindSpaceId,
@@ -66,13 +71,14 @@ export class DocumentsService {
                 },
             );
 
+            this.logger.debug(event('document.enqueued', { operation: 'upload', status: 'completed', duration_ms: elapsed(started), job_correlation_id: correlation.job_correlation_id, max_attempts: 3 }, correlation.request_id));
             return {
                 documentId: documentMetaData.id,
                 jobId: job.id,
                 status: 'PENDING',
             };
         } catch (error) {
-            console.error('Failed to enqueue document:', error);
+            failure('document_enqueue_failed', 'enqueue');
 
             await this.prisma.document.update({
                 where: { id: documentMetaData.id },
@@ -111,9 +117,12 @@ export class DocumentsService {
             throw new NotFoundException('No test document found');
         }
 
+        const started = performance.now();
+        const correlation = { request_id: requestId(), job_correlation_id: randomUUID() };
         const job = await this.documentQueue.add(
             'process-document',
             {
+                ...correlation,
                 documentId: document.id,
                 storageKey: document.storageKey,
                 mindSpaceId: document.mindSpaceId,
@@ -128,6 +137,7 @@ export class DocumentsService {
             },
         );
 
+        this.logger.debug(event('document.enqueued', { operation: 'upload', status: 'completed', duration_ms: elapsed(started), job_correlation_id: correlation.job_correlation_id, max_attempts: 3 }, correlation.request_id));
         return { jobId: job.id };
     }
 }
