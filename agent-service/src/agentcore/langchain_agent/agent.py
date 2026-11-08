@@ -228,8 +228,16 @@ class Agent(BaseAgent):
 
     @traceable(name="memory-retrieval",run_type="retriever",)
     async def search_memories(self, user_message):
-        memories =await self.memory.retrieve(user_message) or []
-        events = await self.events_memory.retrieve(user_message) or []
+
+        vector = await self.memory.embed(user_message)
+
+        memories, events = await asyncio.gather(
+            self.memory.search(vector),
+            self.events_memory.search(vector),
+        )
+
+        memories = memories or []
+        events = events or []
         logger.debug("memory.context.ready profile_count=%d event_count=%d", len(memories), len(events))
         
         memory_context = "\n".join(

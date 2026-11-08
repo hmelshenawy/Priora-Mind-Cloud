@@ -301,7 +301,7 @@ class EventMemory(Memory):
         )
 
 
-
+    @traceable(name="event-embedding", run_type="chain")
     async def embed(self, text: str) -> list[float]:
         """Generate an embedding vector for memory text.
         Args:
@@ -361,7 +361,7 @@ class EventMemory(Memory):
             saved += 1
         logger.debug("memory.persist.completed kind=event saved_count=%d duplicate_count=%d", saved, duplicates)
 
-
+    @traceable(name="event-vector-search", run_type="retriever")
     async def search(self, vector):
         url = f"{Configs.BACKEND_SERVICE_URL}"+"/memory/event/search"
 
