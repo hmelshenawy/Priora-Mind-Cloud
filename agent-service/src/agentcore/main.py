@@ -14,6 +14,13 @@ from time import perf_counter
 from uuid import uuid4
 import re
 from agentcore.memory.memory import RequestLogger, request_id
+from contextlib import asynccontextmanager
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg import AsyncConnection
+from psycopg.rows import dict_row
+
+
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +34,10 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 logger = RequestLogger(logging.getLogger(__name__), {})
 
-app = FastAPI(title="Priora AI Agent")
+
+
+
+# app = FastAPI(title="Priora AI Agent")
 # skills = BuildinSkillProvider(available_tools, tools_registery).list()
 
 builtin_provider = BuildinSkillProvider()
@@ -41,7 +51,39 @@ skill_manager = SkillManager(
 )
 
 # agent = Agent(Configs.OLLAMA_MODEL_NAME,tools= available_tools,tool_registry= tools_registery,skills= skill_manager,steps= 10)
-agent = Agent(Configs.OLLAMA_MODEL_NAME, skills= skill_manager)
+# agent = Agent(Configs.OLLAMA_MODEL_NAME, skills= skill_manager)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with await AsyncConnection.connect(
+        Configs.CHECKPOINT_DATABASE_URL,
+        options="-c search_path=agent_checkpoint",
+        autocommit=True,
+        prepare_threshold=None,
+        row_factory=dict_row,
+    ) as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("SELECT current_schema()")
+            row = await cur.fetchone()
+
+            if row["current_schema"] != "agent_checkpoint":
+                raise RuntimeError("Invalid checkpoint schema")
+
+        checkpointer = AsyncPostgresSaver(conn)
+
+        app.state.agent = Agent(
+            Configs.OPENROUTER_MODEL,
+            skills=skill_manager,
+            checkpointer=checkpointer,
+        )
+
+        yield
+
+
+app = FastAPI(
+    title="Priora AI Agent",
+    lifespan=lifespan,
+)
 
 
 @app.get("/health")
@@ -56,6 +98,7 @@ async def chat(body: ChatRequest, request: Request):
     token = body.accessToken
     history = [item.model_dump() for item in body.history]
     mindSpace = str(body.mindSpaceId)
+    execution_id = str(body.executionId)
 
     
     supplied = request.headers.getlist("x-request-id")
@@ -73,7 +116,10 @@ async def chat(body: ChatRequest, request: Request):
             # Console hygiene must not leave nested content-bearing traces enabled.
             # Background extraction tasks inherit this request-local context.
             
-            async for chunk in agent.stream(message, history):
+            async for chunk in request.app.state.agent.stream(    user_message=body.message if body.type == "message" else None,
+                                                                history=history if body.type == "message" else None,
+                                                                thread_id=execution_id,
+                                                                decision=body.decision if body.type == "HITL" else None,):
                 output_chars += len(chunk)
                 yield chunk
             outcome = "completed"

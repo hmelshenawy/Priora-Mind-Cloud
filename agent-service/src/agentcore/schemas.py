@@ -1,18 +1,39 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from uuid import UUID
 from enum import Enum
-from typing import Literal
+from typing import Literal, Any
 from datetime import datetime
+
 
 class ChatHistoryItem(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=10000)
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=10000)
-    history: list[ChatHistoryItem] = Field(max_length=50)
+    type: Literal["message", "HITL"] = "message"
+    message: str | None = Field(default=None, min_length=1, max_length=10000)
+    decision: Literal["approve", "reject"] | None = None
+    history: list[ChatHistoryItem] = Field(default_factory=list, max_length=50)
     accessToken: str
     mindSpaceId: UUID
+    executionId: UUID
+
+
+    @model_validator(mode="after")
+    def validate_request(self):
+        if self.type == "message":
+            if not self.message or not self.message.strip():
+                raise ValueError("Message is required")
+            if self.decision is not None:
+                raise ValueError("Decision is not allowed for messages")
+
+        elif self.type == "HITL":
+            if self.decision is None:
+                raise ValueError("Decision is required for HITL")
+            if self.message is not None:
+                raise ValueError("Message is not allowed for HITL")
+
+        return self
 
 
     @field_validator("message")
@@ -35,6 +56,13 @@ class AgentRequest(BaseModel):
     message: str
     history: list
     accessToken: str
+
+
+class AgentStreamEvent(BaseModel):
+    type: Literal["text", "HITL", "error"]
+    content: str | dict[str, Any]
+
+
 
 class TaskExecutor(str, Enum):
     user= "user"
