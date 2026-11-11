@@ -149,6 +149,14 @@
     "refreshError": "تم إنشاء المهمة، لكن تعذر تحديث قائمة المهام."
   },
   "chat": {
+    "pendingApproval": "بانتظار الموافقة",
+    "approvalSubmitting": "جارٍ إرسال القرار...",
+    "approvalApproved": "تمت الموافقة",
+    "approvalRejected": "تم الرفض",
+    "approvalExpired": "انتهت صلاحية الطلب",
+    "approvalError": "تعذر إكمال القرار. يرجى المحاولة مرة أخرى.",
+    "approve": "موافقة",
+    "reject": "رفض",
     "title": "المحادثة",
     "conversationsTitle": "المحادثات",
     "conversationsLoading": "جارٍ تحميل المحادثات...",

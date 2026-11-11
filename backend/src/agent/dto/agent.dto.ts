@@ -1,4 +1,4 @@
-import {IsString, IsNotEmpty} from "class-validator"
+import {IsString, IsNotEmpty, IsOptional, IsIn, IsUUID} from "class-validator"
 
 export type ConversationHistoryItem = {
   role: string;
@@ -7,9 +7,20 @@ export type ConversationHistoryItem = {
 
 export class RunAgentDto {
 
+    @IsIn(['message', 'HITL'])
+    type!: 'message' | 'HITL';
+
+    @IsUUID()
+    executionId!: string;
+
+    @IsOptional()
+    @IsIn(['approve', 'reject'])
+    decision?: 'approve' | 'reject';
+
+    @IsOptional()
     @IsString()
     @IsNotEmpty()
-    message!: string;
+    message?: string;
 
     @IsNotEmpty()
     history!: ConversationHistoryItem[];

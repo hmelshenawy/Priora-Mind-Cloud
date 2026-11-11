@@ -9,6 +9,9 @@ import {
   listConversations,
   listMessages,
   sendMessage,
+  resumeHitl,
+  type HitlApproval,
+  type HitlDecision,
   type Conversation,
   type Message,
 } from '@/lib/api/conversations';
@@ -16,6 +19,8 @@ import { clearAuthState, getAuthState } from '@/lib/auth-state';
 import { clearSelectedMindSpaceId } from '@/lib/mindspace-selection';
 import { Button } from '@/components/ui/button';
 import { MessageContent } from '@/components/message-content';
+import { ApprovalCard } from '@/components/approval-card';
+import { createChatStreamReader } from '@/lib/chat-stream';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 type ListStatus = 'loading' | 'empty' | 'success' | 'error';
@@ -55,6 +60,7 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
   const messageRequest = useRef(0);
   const createRequest = useRef(0);
   const sendRequest = useRef(0);
+  const sendingRequest = useRef<number | null>(null);
   const messageScrollRef = useRef<HTMLDivElement>(null);
   const messageHeadingRef = useRef<HTMLHeadingElement>(null);
   const nearBottomRef = useRef(true);
@@ -349,11 +355,23 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
     }
   }
 
-  async function handleSend(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (isSending || !activeId) return;
+  function updateApproval(executionId: string, update: Partial<HitlApproval>) {
+    setMessages((current) => current.map((message) => ({
+      ...message,
+      approvals: message.approvals?.map((approval) => approval.executionId === executionId
+        ? { ...approval, ...update } : approval),
+    })));
+  }
+
+  async function handleSend(
+    event?: FormEvent<HTMLFormElement>,
+    resume?: { approval: HitlApproval; decision: HitlDecision },
+  ) {
+    event?.preventDefault();
+    if (isSending || sendingRequest.current === sendRequest.current || !activeId) return;
+    if (resume && (resume.approval.submitting || (resume.approval.status ?? 'pending') !== 'pending')) return;
     const trimmedContent = content.trim();
-    if (!trimmedContent) return setSendError(t('messageValidation'));
+    if (!resume && !trimmedContent) return setSendError(t('messageValidation'));
 
     const requestId = ++sendRequest.current;
     const nearAtSubmission = isNearBottom(messageScrollRef.current);
@@ -362,8 +380,11 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
     const previousMessageStatus = messageStatus;
     const token = getAuthState()?.accessToken;
     if (!token) return redirectToLogin();
+    // Synchronous guard: React state alone cannot block two clicks in the same tick.
+    sendingRequest.current = requestId;
     setSendError('');
     setIsSending(true);
+    if (resume) updateApproval(resume.approval.executionId, { submitting: true, error: undefined });
     const createdAt = new Date().toISOString();
     const userMessageId = `temp-user-${requestId}`;
     const assistantMessageId = `temp-assistant-${requestId}`;
@@ -382,19 +403,25 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
       content: '',
       createdAt,
     };
+    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
 
     try {
-      setContent('');
+      if (!resume) setContent('');
       setMessageStatus('success');
-      setMessages((current) => [...current, optimisticUserMessage]);
+      if (!resume) setMessages((current) => [...current, optimisticUserMessage]);
       if (nearAtSubmission) scheduleBottomScroll();
 
-      const response = await sendMessage(token, expectedConversation, { content: trimmedContent });
+      const response = resume
+        ? await resumeHitl(token, expectedConversation, { executionId: resume.approval.executionId, decision: resume.decision })
+        : await sendMessage(token, expectedConversation, { content: trimmedContent });
       if (
         requestId !== sendRequest.current ||
         mindSpaceRef.current !== expectedMindSpace ||
         activeRef.current !== expectedConversation
-      ) return;
+      ) {
+        await response.body?.cancel();
+        return;
+      }
 
       setMessages((current) => [...current, streamingAssistantMessage]);
       if (nearBottomRef.current) scheduleBottomScroll();
@@ -406,8 +433,18 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
       revealComplete.current = null;
       lastRevealAt.current = 0;
 
-      const reader = response.body!.getReader();
+      reader = response.body!.getReader();
       const decoder = new TextDecoder();
+      const stream = createChatStreamReader(
+        (text) => enqueueReveal(text, requestId, expectedMindSpace, expectedConversation),
+        (approval) => {
+          setMessages((current) => current.map((message) => message.id === assistantMessageId
+            ? { ...message, approvals: [...(message.approvals ?? []), approval] }
+            : message));
+          if (nearBottomRef.current) scheduleBottomScroll();
+        },
+        resume ? 'ndjson' : 'text',
+      );
 
       while (true) {
         const { value, done } = await reader.read();
@@ -419,11 +456,10 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
           activeRef.current !== expectedConversation
         ) {
           await reader.cancel();
-          stopRevealLoop();
           return;
         }
 
-        enqueueReveal(decoder.decode(value, { stream: true }), requestId, expectedMindSpace, expectedConversation);
+        stream.push(decoder.decode(value, { stream: true }));
       }
 
       if (
@@ -432,7 +468,8 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
         activeRef.current !== expectedConversation
       ) return;
 
-      enqueueReveal(decoder.decode(), requestId, expectedMindSpace, expectedConversation);
+      stream.push(decoder.decode());
+      stream.finish();
       revealNetworkComplete.current = true;
       pumpReveal(requestId, expectedMindSpace, expectedConversation);
       await waitForRevealCompletion();
@@ -442,20 +479,33 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
         activeRef.current !== expectedConversation
       ) return;
       setMessageStatus('success');
+      if (resume) updateApproval(resume.approval.executionId, {
+        status: resume.decision === 'approve' ? 'approved' : 'rejected', submitting: false,
+      });
     } catch (error) {
       if (requestId !== sendRequest.current || activeRef.current !== expectedConversation) return;
       stopRevealLoop();
       removeMessages([userMessageId, assistantMessageId]);
       setMessageStatus(previousMessageStatus);
+      const expired = error instanceof ConversationApiError && error.code === 'hitlExpired';
+      if (resume) updateApproval(resume.approval.executionId, {
+        status: expired ? 'expired' : 'pending', submitting: false,
+        error: expired ? error.message || t('approvalExpired') : t('approvalError'),
+      });
       if (error instanceof ConversationApiError && error.code === 'unauthorized') {
         redirectToLogin();
-      } else if (error instanceof ConversationApiError && error.code === 'notFound') {
+      } else if (!resume && error instanceof ConversationApiError && error.code === 'notFound') {
         resetActiveConversation();
-      } else {
+      } else if (!resume) {
         setSendError(t('sendError'));
       }
     } finally {
+      if (sendingRequest.current === requestId) sendingRequest.current = null;
       if (requestId === sendRequest.current) setIsSending(false);
+      if (reader) {
+        await reader.cancel().catch(() => {});
+        reader.releaseLock();
+      }
     }
   }
 
@@ -527,6 +577,10 @@ export function Chat({ mindSpaceId }: { mindSpaceId: string }) {
                 <li className={message.role === 'USER' ? 'user-message' : 'assistant-message'} key={message.id}>
                   <strong>{message.role === 'USER' ? t('userRole') : t('assistantRole')}</strong>
                   <MessageContent content={message.content} />
+                  {message.approvals?.map((approval, index) => (
+                    <ApprovalCard key={index} approval={approval} disabled={isSending}
+                      onDecision={(decision) => void handleSend(undefined, { approval, decision })} />
+                  ))}
                 </li>
               ))}
             </ol>

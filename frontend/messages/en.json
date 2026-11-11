@@ -149,6 +149,14 @@
     "refreshError": "The task was created, but the task list could not be refreshed."
   },
   "chat": {
+    "pendingApproval": "Pending approval",
+    "approvalSubmitting": "Submitting decision...",
+    "approvalApproved": "Approved",
+    "approvalRejected": "Rejected",
+    "approvalExpired": "Expired",
+    "approvalError": "The decision could not be completed. Please try again.",
+    "approve": "Approve",
+    "reject": "Reject",
     "title": "Chat",
     "conversationsTitle": "Conversations",
     "conversationsLoading": "Loading conversations...",

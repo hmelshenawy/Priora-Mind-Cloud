@@ -6,21 +6,32 @@ export type Conversation = {
   updatedAt: string;
 };
 
+export type HitlDecision = 'approve' | 'reject';
+
+export type HitlApproval = {
+  executionId: string;
+  actions: { name: string; args: Record<string, unknown>; description?: string }[];
+  status?: 'pending' | 'approved' | 'rejected' | 'expired';
+  submitting?: boolean;
+  error?: string;
+};
+
 export type Message = {
   id: string;
   conversationId: string;
   role: 'USER' | 'ASSISTANT';
   content: string;
+  approvals?: HitlApproval[];
   createdAt: string;
 };
 
-export type ConversationApiErrorCode = 'unauthorized' | 'notFound' | 'requestFailed';
+export type ConversationApiErrorCode = 'unauthorized' | 'notFound' | 'requestFailed' | 'hitlExpired';
 
 export class ConversationApiError extends Error {
   code: ConversationApiErrorCode;
 
-  constructor(code: ConversationApiErrorCode) {
-    super(code);
+  constructor(code: ConversationApiErrorCode, message: string = code) {
+    super(message);
     this.code = code;
   }
 }
@@ -106,5 +117,28 @@ export async function sendMessage(
   if (!response.ok) throw errorFromStatus(response.status);
   if (!response.body) throw new ConversationApiError('requestFailed');
 
+  return response;
+}
+
+export async function resumeHitl(
+  accessToken: string,
+  conversationId: string,
+  input: { executionId: string; decision: HitlDecision },
+) {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/conversations/${encodeURIComponent(conversationId)}/hitl`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
+  } catch {
+    throw new ConversationApiError('requestFailed');
+  }
+  if (!response.ok) throw errorFromStatus(response.status);
+  if (!response.body) throw new ConversationApiError('requestFailed');
   return response;
 }

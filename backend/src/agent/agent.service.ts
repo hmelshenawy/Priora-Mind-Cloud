@@ -29,6 +29,9 @@ export class AgentService {
         {
           method: "POST",
           body: JSON.stringify({
+            type: run.type,
+            executionId: run.executionId,
+            decision: run.decision,
             message: userMessage,
             history: history,
             accessToken: token,

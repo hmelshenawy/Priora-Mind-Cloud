@@ -57,7 +57,7 @@ test('real HTTP lifecycle: validation, guards, concurrency, stream failures and 
       runAgent: async () =>
         new ReadableStream({
           async start(controller) {
-            controller.enqueue(new TextEncoder().encode(SECRET));
+            controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: 'text', content: SECRET }) + '\n'));
             await new Promise((resolve) => setTimeout(resolve, 35));
             if (streamMode === 'failure') controller.error(Error(SECRET));
             else controller.close();

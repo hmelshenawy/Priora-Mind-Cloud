@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Res, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Res, Body, Patch, Param, Delete, UseGuards, Req, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { ConversationMessagesService } from './conversation-messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { ResumeHitlDto } from './dto/resume-hitl.dto';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { JwtGuard } from 'src/auth/guards/jwt-guard';
@@ -36,6 +37,29 @@ export class ConversationsController {
       res.write(chunk);
     }
 
+    res.end();
+  }
+
+  @Post(':id/hitl')
+  async resumeHITL(
+    @Param('id', ParseUUIDPipe) conversationId: string,
+    @Body() dto: ResumeHitlDto,
+    @Req() req: { user: { userId: string }, headers: { authorization: string } },
+    @Res() res: Response,
+  ) {
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    try {
+      for await (const chunk of this.conversationMessagesService.resume(
+        conversationId, dto, req.user.userId, req.headers.authorization,
+      )) {
+        res.write(chunk);
+      }
+    } catch (error) {
+      if (!res.headersSent) throw error;
+      res.write(JSON.stringify({ type: 'error', content: {
+        code: 'HITL_RESUME_FAILED', message: 'The decision could not be completed. Please try again.',
+      } }) + '\n');
+    }
     res.end();
   }
 
